@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useGoogleAuth } from '../../src/firebase/auth';
 import { syncAll } from '../../src/firebase/sync';
+import { colors, fontSize, fontWeight, spacing, radius, lineHeight, letterSpacing } from '../../src/theme';
 
 export default function ProfileScreen() {
   const { user, loading, signingIn, error, signInWithGoogle, signOutUser } = useGoogleAuth();
@@ -22,7 +23,7 @@ export default function ProfileScreen() {
         `${now.getHours()}시 ${now.getMinutes().toString().padStart(2, '0')}분`
       );
       Alert.alert('동기화 완료', '학습 데이터가 클라우드에 저장됐어요!');
-    } catch (e) {
+    } catch {
       Alert.alert('오류', '동기화 중 문제가 발생했어요. 인터넷 연결을 확인해주세요.');
     } finally {
       setSyncing(false);
@@ -45,20 +46,20 @@ export default function ProfileScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#4A90D9" />
+          <ActivityIndicator size="large" color={colors.sage[600]} />
         </View>
       </SafeAreaView>
     );
   }
 
-  // 로그인 전
+  // ── 로그인 전 ────────────────────────────────────
   if (!user) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.loginWrap}>
+        <View style={styles.wrap}>
           <Text style={styles.pageTitle}>프로필</Text>
 
-          <View style={styles.illustBox}>
+          <View style={styles.card}>
             <Text style={styles.illustEmoji}>☁️</Text>
             <Text style={styles.illustTitle}>Google로 로그인하면</Text>
             <Text style={styles.illustSub}>
@@ -79,10 +80,10 @@ export default function ProfileScreen() {
             disabled={signingIn}
           >
             {signingIn ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.paper.white} />
             ) : (
               <>
-                <Ionicons name="logo-google" size={20} color="#fff" />
+                <Ionicons name="logo-google" size={18} color={colors.paper.white} />
                 <Text style={styles.googleBtnText}>Google로 로그인</Text>
               </>
             )}
@@ -96,19 +97,19 @@ export default function ProfileScreen() {
     );
   }
 
-  // 로그인 후
+  // ── 로그인 후 ────────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.profileWrap}>
+      <View style={styles.wrap}>
         <Text style={styles.pageTitle}>프로필</Text>
 
         {/* 사용자 정보 카드 */}
-        <View style={styles.userCard}>
+        <View style={[styles.card, styles.userCardRow]}>
           {user.photoURL ? (
             <Image source={{ uri: user.photoURL }} style={styles.avatar} />
           ) : (
             <View style={styles.avatarPlaceholder}>
-              <Ionicons name="person" size={32} color="#9BA3AF" />
+              <Ionicons name="person" size={28} color={colors.paper[300]} />
             </View>
           )}
           <View style={styles.userInfo}>
@@ -118,9 +119,9 @@ export default function ProfileScreen() {
         </View>
 
         {/* 동기화 카드 */}
-        <View style={styles.syncCard}>
+        <View style={[styles.card, styles.syncCard]}>
           <View style={styles.syncHeader}>
-            <Ionicons name="cloud-outline" size={22} color="#4A90D9" />
+            <Ionicons name="cloud-outline" size={20} color={colors.sage[500]} />
             <Text style={styles.syncTitle}>클라우드 동기화</Text>
           </View>
           <Text style={styles.syncSub}>
@@ -136,10 +137,10 @@ export default function ProfileScreen() {
             disabled={syncing}
           >
             {syncing ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.paper.white} />
             ) : (
               <>
-                <Ionicons name="sync-outline" size={18} color="#fff" />
+                <Ionicons name="sync-outline" size={16} color={colors.paper.white} />
                 <Text style={styles.syncBtnText}>지금 동기화</Text>
               </>
             )}
@@ -148,7 +149,7 @@ export default function ProfileScreen() {
 
         {/* 로그아웃 */}
         <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
-          <Ionicons name="log-out-outline" size={18} color="#EF4444" />
+          <Ionicons name="log-out-outline" size={16} color={colors.semantic.error} />
           <Text style={styles.signOutText}>로그아웃</Text>
         </TouchableOpacity>
       </View>
@@ -157,102 +158,143 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
+  container: {
+    flex: 1,
+    backgroundColor: colors.paper.bg,
+    paddingTop: spacing.lg,
+  },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-  // 로그인 전
-  loginWrap: { flex: 1, padding: 24, paddingTop: 32 },
-  pageTitle: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 32 },
-  illustBox: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 28,
-    alignItems: 'center',
-    marginBottom: 24,
+  wrap: {
+    flex: 1,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing['2xl'],
+    paddingBottom: spacing.lg,
+  },
+
+  pageTitle: {
+    fontSize: fontSize.h1,
+    fontWeight: fontWeight.bold,
+    color: colors.paper[900],
+    marginBottom: spacing['2xl'],
+  },
+
+  // 공통 카드
+  card: {
+    backgroundColor: colors.paper.white,
+    borderRadius: radius['2xl'],
+    borderWidth: 0.5,
+    borderColor: colors.paper[100],
+    padding: spacing['2xl'],
+    marginBottom: spacing.lg,
     shadowColor: '#000',
     shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 12 },
+    shadowRadius: 24,
+    elevation: 3,
+    // 로그인 전 카드는 중앙 정렬
+    alignItems: 'center' as const,
   },
-  illustEmoji: { fontSize: 56, marginBottom: 16 },
-  illustTitle: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 8 },
-  illustSub: { fontSize: 14, color: '#6B7280', textAlign: 'center', lineHeight: 22 },
+
+  // 로그인 전
+  illustEmoji: { fontSize: 52, marginBottom: spacing.lg },
+  illustTitle: {
+    fontSize: fontSize.h2,
+    fontWeight: fontWeight.semibold,
+    color: colors.paper[900],
+    marginBottom: spacing.sm,
+  },
+  illustSub: {
+    fontSize: fontSize.bodySmall,
+    color: colors.paper[500],
+    textAlign: 'center',
+    lineHeight: fontSize.bodySmall * lineHeight.relaxed,
+  },
   errorBox: {
-    backgroundColor: '#FEE2E2',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
+    backgroundColor: colors.terra[100],
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    width: '100%',
   },
-  errorText: { color: '#B91C1C', fontSize: 13, textAlign: 'center' },
+  errorText: { color: colors.semantic.error, fontSize: fontSize.caption, textAlign: 'center' },
+
   googleBtn: {
     backgroundColor: '#4285F4',
-    borderRadius: 14,
+    borderRadius: radius['2xl'],
     paddingVertical: 16,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 16,
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 20,
+    elevation: 3,
   },
-  googleBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  btnDisabled: { opacity: 0.6 },
-  loginNote: { fontSize: 12, color: '#9BA3AF', textAlign: 'center' },
+  googleBtnText: { color: colors.paper.white, fontSize: fontSize.body, fontWeight: fontWeight.medium },
+  btnDisabled: { opacity: 0.55 },
+  loginNote: { fontSize: fontSize.caption - 1, color: colors.paper[400], textAlign: 'center' },
 
-  // 로그인 후
-  profileWrap: { flex: 1, padding: 24, paddingTop: 32 },
-  userCard: {
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 20,
+  // 로그인 후 — 사용자 카드 (row layout으로 override)
+  userCardRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    gap: spacing.lg,
   },
-  avatar: { width: 56, height: 56, borderRadius: 28 },
+  avatar: { width: 52, height: 52, borderRadius: 26 },
   avatarPlaceholder: {
-    width: 56, height: 56, borderRadius: 28,
-    backgroundColor: '#F3F4F6',
+    width: 52, height: 52, borderRadius: 26,
+    backgroundColor: colors.paper[50],
+    borderWidth: 0.5,
+    borderColor: colors.paper[200],
     justifyContent: 'center',
     alignItems: 'center',
   },
   userInfo: { flex: 1 },
-  userName: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 4 },
-  userEmail: { fontSize: 13, color: '#6B7280' },
+  userName: { fontSize: fontSize.body, fontWeight: fontWeight.semibold, color: colors.paper[900], marginBottom: spacing.xs },
+  userEmail: { fontSize: fontSize.caption, color: colors.paper[500] },
+
+  // 동기화 카드
   syncCard: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: 18,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
+    backgroundColor: colors.sage[50],
+    borderColor: colors.sage[200],
+    alignItems: 'flex-start',
   },
-  syncHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  syncTitle: { fontSize: 16, fontWeight: '700', color: '#1E40AF' },
-  syncSub: { fontSize: 13, color: '#3B82F6', lineHeight: 20, marginBottom: 12 },
-  lastSynced: { fontSize: 12, color: '#60A5FA', marginBottom: 12 },
+  syncHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  syncTitle: { fontSize: fontSize.body, fontWeight: fontWeight.semibold, color: colors.sage[800] },
+  syncSub: {
+    fontSize: fontSize.caption,
+    color: colors.sage[600],
+    lineHeight: fontSize.caption * lineHeight.relaxed,
+    marginBottom: spacing.md,
+  },
+  lastSynced: { fontSize: fontSize.caption - 1, color: colors.sage[500], marginBottom: spacing.md },
   syncBtn: {
-    backgroundColor: '#4A90D9',
-    borderRadius: 12,
-    paddingVertical: 12,
+    backgroundColor: colors.sage[600],
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.lg,
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.xs,
   },
-  syncBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  syncBtnText: { color: colors.paper.white, fontSize: fontSize.bodySmall, fontWeight: fontWeight.medium },
+
+  // 로그아웃
   signOutBtn: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.sm,
     paddingVertical: 14,
-    borderRadius: 14,
-    backgroundColor: '#FEF2F2',
+    borderRadius: radius.lg,
+    backgroundColor: colors.terra[100],
+    borderWidth: 0.5,
+    borderColor: colors.terra[200],
   },
-  signOutText: { color: '#EF4444', fontSize: 15, fontWeight: '600' },
+  signOutText: { color: colors.semantic.error, fontSize: fontSize.bodySmall, fontWeight: fontWeight.medium },
 });

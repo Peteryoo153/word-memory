@@ -15,8 +15,7 @@ WebBrowser.maybeCompleteAuthSession();
 
 const GOOGLE_CLIENT_IDS = {
   webClientId: '80364629052-u4vc4mq4rrukaj3dikmjitjuqrpcu50n.apps.googleusercontent.com',
-  iosClientId: 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com',
-  androidClientId: 'YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com',
+  iosClientId: '80364629052-foutf6riq3eo56qgm5f1bek34j9q2i4p.apps.googleusercontent.com',
 };
 
 // Google 로그인 전체 흐름을 관리하는 훅
@@ -29,7 +28,6 @@ export function useGoogleAuth() {
   const [request, response, promptAsync] = Google.useAuthRequest({
     webClientId: GOOGLE_CLIENT_IDS.webClientId,
     iosClientId: GOOGLE_CLIENT_IDS.iosClientId,
-    androidClientId: GOOGLE_CLIENT_IDS.androidClientId,
   });
 
   // 앱 시작 시 로그인 상태 감지

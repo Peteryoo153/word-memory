@@ -5,18 +5,19 @@ import {
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { WORDS } from '../../data/words';
-import { getAllProgress, saveWordProgress, calcNextReview } from '../../src/storage';
+import { getActiveWordbook, getProgress, markWordResult, getDueWordIds } from '../../src/storage/wordbookStorage';
+import { toWord } from '../../src/types/wordbook';
 import { buildQuiz, QuizQuestion } from '../../src/quiz';
-import { WordProgress } from '../../src/types';
+import { Word } from '../../src/types';
 import { speakWord } from '../../src/tts';
+import { colors, fontSize, fontWeight, fontFamily, spacing, radius, lineHeight, letterSpacing } from '../../src/theme';
 
 type Mode = 'select' | 'quiz' | 'result';
 type TestType = 'quick' | 'review';
 
 interface AnswerRecord {
   question: QuizQuestion;
-  chosen: number;    // 사용자가 고른 인덱스
+  chosen: number;
   correct: boolean;
 }
 
@@ -24,35 +25,38 @@ export default function TestScreen() {
   const [mode, setMode] = useState<Mode>('select');
   const [testType, setTestType] = useState<TestType>('quick');
   const [reviewCount, setReviewCount] = useState(0);
+  const [activeWordbookId, setActiveWordbookId] = useState<string | null>(null);
 
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
-  const [selected, setSelected] = useState<number | null>(null); // 현재 문항 선택값
+  const [selected, setSelected] = useState<number | null>(null);
   const [records, setRecords] = useState<AnswerRecord[]>([]);
 
   useFocusEffect(
     useCallback(() => {
       loadReviewCount();
-      // 탭 다시 들어오면 선택 화면으로 초기화
       setMode('select');
     }, [])
   );
 
   async function loadReviewCount() {
-    const all = await getAllProgress();
-    const today = new Date().toISOString().split('T')[0];
-    const count = Object.values(all).filter(
-      (p) => p.nextReviewDate <= today && p.learned
-    ).length;
-    setReviewCount(count);
+    const book = await getActiveWordbook();
+    if (!book) { setReviewCount(0); return; }
+    setActiveWordbookId(book.id);
+    const progress = await getProgress(book.id);
+    setReviewCount(getDueWordIds(progress).length);
   }
 
   async function startQuick() {
-    // 한 번이라도 학습한 단어 중 랜덤 5개
-    const all = await getAllProgress();
-    const learned = WORDS.filter((w) => all[w.id]?.learned);
-    const pool = learned.length >= 5 ? learned : WORDS; // 학습한 게 5개 미만이면 전체에서
-    const quiz = buildQuiz(pool, 5);
+    const book = await getActiveWordbook();
+    if (!book) return;
+    const progress = await getProgress(book.id);
+    const allWords = book.words.map(toWord);
+    const learnedWords = book.words
+      .filter((w) => progress.ebbinghausData[w.id]?.learned)
+      .map(toWord);
+    const pool = learnedWords.length >= 5 ? learnedWords : allWords;
+    const quiz = buildQuiz(pool, 5, allWords);
     setQuestions(quiz);
     setCurrentIdx(0);
     setSelected(null);
@@ -62,13 +66,13 @@ export default function TestScreen() {
   }
 
   async function startReview() {
-    const all = await getAllProgress();
-    const today = new Date().toISOString().split('T')[0];
-    const dueIds = Object.values(all)
-      .filter((p) => p.nextReviewDate <= today && p.learned)
-      .map((p) => p.wordId);
-    const dueWords = WORDS.filter((w) => dueIds.includes(w.id));
-    const quiz = buildQuiz(dueWords, dueWords.length);
+    const book = await getActiveWordbook();
+    if (!book) return;
+    const progress = await getProgress(book.id);
+    const dueIds = getDueWordIds(progress);
+    const allWords = book.words.map(toWord);
+    const dueWords = book.words.filter((w) => dueIds.includes(w.id)).map(toWord);
+    const quiz = buildQuiz(dueWords, dueWords.length, allWords);
     setQuestions(quiz);
     setCurrentIdx(0);
     setSelected(null);
@@ -78,7 +82,7 @@ export default function TestScreen() {
   }
 
   function handleSelect(idx: number) {
-    if (selected !== null) return; // 이미 선택했으면 무시
+    if (selected !== null) return;
     setSelected(idx);
   }
 
@@ -90,19 +94,8 @@ export default function TestScreen() {
     const newRecord: AnswerRecord = { question: q, chosen: selected, correct };
     const newRecords = [...records, newRecord];
 
-    // 복습 테스트일 때만 진도 업데이트
-    if (testType === 'review') {
-      const all = await getAllProgress();
-      const existing: WordProgress = all[q.word.id] ?? {
-        wordId: q.word.id,
-        learned: true,
-        correctCount: 0,
-        wrongCount: 0,
-        nextReviewDate: '',
-        reviewInterval: 1,
-        lastStudiedAt: new Date().toISOString().split('T')[0],
-      };
-      await saveWordProgress(calcNextReview(existing, correct));
+    if (testType === 'review' && activeWordbookId) {
+      await markWordResult(activeWordbookId, q.word.id, correct);
     }
 
     if (currentIdx + 1 >= questions.length) {
@@ -115,7 +108,7 @@ export default function TestScreen() {
     }
   }
 
-  // ── 화면: 모드 선택 ──────────────────────────────
+  // ── 모드 선택 화면 ───────────────────────────────
   if (mode === 'select') {
     return (
       <SafeAreaView style={styles.container}>
@@ -155,14 +148,13 @@ export default function TestScreen() {
     );
   }
 
-  // ── 화면: 퀴즈 진행 ──────────────────────────────
+  // ── 퀴즈 화면 ────────────────────────────────────
   if (mode === 'quiz') {
     const q = questions[currentIdx];
     const answered = selected !== null;
 
     return (
       <SafeAreaView style={styles.container}>
-        {/* 헤더 */}
         <View style={styles.quizHeader}>
           <TouchableOpacity onPress={() => setMode('select')}>
             <Text style={styles.backBtn}>← 나가기</Text>
@@ -183,7 +175,7 @@ export default function TestScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.quizBody}>
-          {/* 문제 */}
+          {/* 문제 박스 */}
           <View style={styles.questionBox}>
             <Text style={styles.questionLabel}>다음 단어의 뜻은?</Text>
             <View style={styles.questionWordRow}>
@@ -192,29 +184,27 @@ export default function TestScreen() {
                 onPress={() => speakWord(q.word.word)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Ionicons name="volume-high-outline" size={26} color="#4A90D9" />
+                <Ionicons name="volume-high-outline" size={24} color={colors.sage[500]} />
               </TouchableOpacity>
             </View>
             <Text style={styles.questionPos}>
-              {({ noun: '명사', verb: '동사', adj: '형용사', adv: '부사' } as Record<string,string>)[q.word.partOfSpeech] ?? q.word.partOfSpeech}
+              {({ noun: 'NOUN · 명사', verb: 'VERB · 동사', adj: 'ADJ · 형용사', adv: 'ADV · 부사' } as Record<string, string>)[q.word.partOfSpeech] ?? q.word.partOfSpeech}
             </Text>
           </View>
 
           {/* 보기 */}
           <View style={styles.choicesWrap}>
             {q.choices.map((choice, idx) => {
-              let bg = '#fff';
-              let textColor = '#111827';
-              let borderColor = '#E5E7EB';
+              let bg: string = colors.paper.white;
+              let textColor: string = colors.paper[800];
+              let borderColor: string = colors.paper[200];
 
               if (answered) {
                 if (idx === q.answerIndex) {
-                  bg = '#DCFCE7'; borderColor = '#16A34A'; textColor = '#15803D';
+                  bg = colors.sage[100]; borderColor = colors.sage[400]; textColor = colors.sage[800];
                 } else if (idx === selected) {
-                  bg = '#FEE2E2'; borderColor = '#DC2626'; textColor = '#B91C1C';
+                  bg = colors.terra[100]; borderColor = colors.terra[400]; textColor = colors.semantic.error;
                 }
-              } else if (idx === selected) {
-                bg = '#EFF6FF'; borderColor = '#4A90D9';
               }
 
               return (
@@ -224,7 +214,7 @@ export default function TestScreen() {
                   onPress={() => handleSelect(idx)}
                   activeOpacity={answered ? 1 : 0.7}
                 >
-                  <Text style={[styles.choiceLabel, { color: '#9BA3AF' }]}>
+                  <Text style={[styles.choiceLabel, { color: colors.paper[400] }]}>
                     {['A', 'B', 'C', 'D'][idx]}
                   </Text>
                   <Text style={[styles.choiceText, { color: textColor }]}>{choice}</Text>
@@ -264,7 +254,7 @@ export default function TestScreen() {
     );
   }
 
-  // ── 화면: 결과 ──────────────────────────────────
+  // ── 결과 화면 ────────────────────────────────────
   const correctCount = records.filter((r) => r.correct).length;
   const total = records.length;
   const scorePercent = Math.round((correctCount / total) * 100);
@@ -282,7 +272,6 @@ export default function TestScreen() {
         <Text style={styles.resultPercent}>{scorePercent}점</Text>
         <Text style={styles.resultMsg}>{resultMsg}</Text>
 
-        {/* 오답 목록 */}
         {records.some((r) => !r.correct) && (
           <View style={styles.wrongList}>
             <Text style={styles.wrongListTitle}>틀린 단어</Text>
@@ -304,115 +293,219 @@ export default function TestScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
+  container: { flex: 1, backgroundColor: colors.paper.bg },
 
-  // 선택 화면
-  selectWrap: { flex: 1, padding: 24, paddingTop: 32 },
-  pageTitle: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 6 },
-  pageSub: { fontSize: 14, color: '#6B7280', marginBottom: 28 },
+  // ── 선택 화면
+  selectWrap: {
+    flex: 1,
+    padding: spacing.xl,
+    paddingTop: spacing['2xl'],
+  },
+  pageTitle: {
+    fontSize: fontSize.h1,
+    fontWeight: fontWeight.bold,
+    color: colors.paper[900],
+    marginBottom: spacing.xs,
+  },
+  pageSub: {
+    fontSize: fontSize.bodySmall,
+    color: colors.paper[500],
+    marginBottom: spacing['2xl'],
+  },
   modeCard: {
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 20,
-    marginBottom: 14,
+    backgroundColor: colors.paper.white,
+    borderRadius: radius['2xl'],
+    borderWidth: 0.5,
+    borderColor: colors.paper[100],
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 12 },
+    shadowRadius: 24,
+    elevation: 3,
   },
-  modeCardDisabled: { opacity: 0.5 },
-  modeEmoji: { fontSize: 36, marginRight: 16 },
+  modeCardDisabled: { opacity: 0.45 },
+  modeEmoji: { fontSize: 32, marginRight: spacing.lg },
   modeTextWrap: { flex: 1 },
-  modeTitle: { fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 4 },
-  modeSub: { fontSize: 13, color: '#6B7280' },
+  modeTitle: {
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.semibold,
+    color: colors.paper[900],
+    marginBottom: spacing.xs,
+  },
+  modeSub: { fontSize: fontSize.caption, color: colors.paper[500] },
   badge: {
-    backgroundColor: '#F59E0B',
-    borderRadius: 12,
-    minWidth: 24,
-    height: 24,
+    backgroundColor: colors.terra[500],
+    borderRadius: radius.sm,
+    minWidth: 22,
+    height: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 6,
+    paddingHorizontal: spacing.xs,
   },
-  badgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  badgeText: { color: colors.paper.white, fontSize: fontSize.label, fontWeight: fontWeight.bold },
 
-  // 퀴즈 화면
+  // ── 퀴즈 화면
   quizHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
   },
-  backBtn: { fontSize: 14, color: '#6B7280', fontWeight: '600' },
-  quizCounter: { fontSize: 14, color: '#6B7280', fontWeight: '600' },
-  progressBarBg: { height: 6, backgroundColor: '#E5E7EB', marginHorizontal: 20, borderRadius: 3, overflow: 'hidden' },
-  progressBarFill: { height: '100%', backgroundColor: '#4A90D9', borderRadius: 3 },
-  quizBody: { padding: 20, paddingBottom: 40 },
+  backBtn: { fontSize: fontSize.bodySmall, color: colors.paper[500], fontWeight: fontWeight.medium },
+  quizCounter: { fontSize: fontSize.bodySmall, color: colors.paper[500], fontWeight: fontWeight.medium },
+
+  progressBarBg: {
+    height: 3,
+    backgroundColor: colors.sage[200],
+    marginHorizontal: spacing.lg,
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: spacing.xs,
+  },
+  progressBarFill: { height: '100%', backgroundColor: colors.sage[600], borderRadius: 2 },
+
+  quizBody: { padding: spacing.lg, paddingBottom: 40 },
+
   questionBox: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 28,
+    backgroundColor: colors.paper.white,
+    borderRadius: radius['2xl'],
+    borderWidth: 0.5,
+    borderColor: colors.paper[100],
+    padding: spacing['2xl'],
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: spacing.lg,
     shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 12 },
+    shadowRadius: 24,
     elevation: 2,
   },
-  questionLabel: { fontSize: 12, color: '#9BA3AF', fontWeight: '600', marginBottom: 12, letterSpacing: 1 },
-  questionWordRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  questionWord: { fontSize: 36, fontWeight: '800', color: '#111827' },
-  questionPos: { fontSize: 13, color: '#4A90D9', fontWeight: '600' },
-  choicesWrap: { gap: 10 },
+  questionLabel: {
+    fontSize: fontSize.label,
+    color: colors.paper[400],
+    fontWeight: fontWeight.medium,
+    letterSpacing: letterSpacing.label,
+    textTransform: 'uppercase',
+    marginBottom: spacing.md,
+  },
+  questionWordRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  questionWord: {
+    fontSize: fontSize.displayWord,
+    fontFamily: fontFamily.serif,
+    fontWeight: fontWeight.bold,
+    color: colors.paper[900],
+  },
+  questionPos: {
+    fontSize: fontSize.label,
+    color: colors.terra[500],
+    fontWeight: fontWeight.medium,
+    letterSpacing: letterSpacing.label,
+  },
+
+  choicesWrap: { gap: spacing.sm },
   choiceBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 14,
-    borderWidth: 2,
-    padding: 16,
-    gap: 12,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    borderColor: colors.paper[100],
+    backgroundColor: colors.paper.white,
+    padding: spacing.lg,
+    gap: spacing.md,
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 16,
+    elevation: 1,
   },
-  choiceLabel: { fontSize: 14, fontWeight: '700', width: 20, textAlign: 'center' },
-  choiceText: { fontSize: 15, fontWeight: '600', flex: 1 },
+  choiceLabel: { fontSize: fontSize.bodySmall, fontWeight: fontWeight.bold, width: 20, textAlign: 'center' },
+  choiceText: { fontSize: fontSize.body, fontWeight: fontWeight.medium, flex: 1 },
+
   feedbackBox: {
-    borderRadius: 14,
-    padding: 16,
-    marginTop: 16,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginTop: spacing.lg,
+    borderWidth: 0.5,
   },
-  feedbackCorrect: { backgroundColor: '#DCFCE7' },
-  feedbackWrong: { backgroundColor: '#FEE2E2' },
-  feedbackTitle: { fontSize: 16, fontWeight: '800', marginBottom: 4, color: '#111827' },
-  feedbackDetail: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 4 },
-  feedbackExample: { fontSize: 13, color: '#6B7280', fontStyle: 'italic' },
+  feedbackCorrect: {
+    backgroundColor: colors.sage[100],
+    borderColor: colors.sage[300],
+  },
+  feedbackWrong: {
+    backgroundColor: colors.terra[100],
+    borderColor: colors.terra[200],
+  },
+  feedbackTitle: {
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.bold,
+    marginBottom: spacing.xs,
+    color: colors.paper[900],
+  },
+  feedbackDetail: {
+    fontSize: fontSize.bodySmall,
+    fontWeight: fontWeight.semibold,
+    color: colors.paper[700],
+    marginBottom: spacing.xs,
+  },
+  feedbackExample: {
+    fontSize: fontSize.caption,
+    color: colors.paper[500],
+    fontStyle: 'italic',
+    lineHeight: fontSize.caption * lineHeight.relaxed,
+  },
+
   nextBtn: {
-    backgroundColor: '#4A90D9',
-    margin: 20,
-    borderRadius: 16,
-    paddingVertical: 16,
+    backgroundColor: colors.sage[600],
+    margin: spacing.lg,
+    borderRadius: radius.lg,
+    paddingVertical: 14,
     alignItems: 'center',
   },
-  nextBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  nextBtnText: { color: colors.paper.white, fontSize: fontSize.body, fontWeight: fontWeight.medium },
 
-  // 결과 화면
-  resultWrap: { alignItems: 'center', padding: 28, paddingTop: 48 },
-  resultEmoji: { fontSize: 72, marginBottom: 16 },
-  resultScore: { fontSize: 48, fontWeight: '800', color: '#111827' },
-  resultPercent: { fontSize: 22, color: '#4A90D9', fontWeight: '700', marginBottom: 8 },
-  resultMsg: { fontSize: 18, color: '#6B7280', marginBottom: 28 },
-  wrongList: { width: '100%', backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 24 },
-  wrongListTitle: { fontSize: 14, fontWeight: '700', color: '#9BA3AF', marginBottom: 12, letterSpacing: 1 },
-  wrongItem: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  wrongWord: { fontSize: 16, fontWeight: '700', color: '#111827' },
-  wrongMeaning: { fontSize: 13, color: '#6B7280', marginTop: 2 },
-  retryBtn: {
-    backgroundColor: '#4A90D9',
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
+  // ── 결과 화면
+  resultWrap: { alignItems: 'center', padding: spacing['2xl'], paddingTop: spacing['3xl'] },
+  resultEmoji: { fontSize: 72, marginBottom: spacing.lg },
+  resultScore: { fontSize: 48, fontWeight: fontWeight.extrabold, color: colors.paper[900] },
+  resultPercent: { fontSize: fontSize.h2, color: colors.sage[600], fontWeight: fontWeight.bold, marginBottom: spacing.sm },
+  resultMsg: { fontSize: fontSize.body, color: colors.paper[500], marginBottom: spacing['2xl'] },
+
+  wrongList: {
+    width: '100%',
+    backgroundColor: colors.paper.white,
+    borderRadius: radius.xl,
+    borderWidth: 0.5,
+    borderColor: colors.paper[100],
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
   },
-  retryBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  wrongListTitle: {
+    fontSize: fontSize.label,
+    fontWeight: fontWeight.medium,
+    color: colors.paper[400],
+    letterSpacing: letterSpacing.label,
+    textTransform: 'uppercase',
+    marginBottom: spacing.md,
+  },
+  wrongItem: {
+    paddingVertical: spacing.sm + 2,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.paper[100],
+  },
+  wrongWord: { fontSize: fontSize.body, fontWeight: fontWeight.semibold, color: colors.paper[900] },
+  wrongMeaning: { fontSize: fontSize.caption, color: colors.paper[500], marginTop: spacing.xs },
+
+  retryBtn: {
+    backgroundColor: colors.sage[600],
+    borderRadius: radius.lg,
+    paddingVertical: 14,
+    paddingHorizontal: spacing['2xl'],
+  },
+  retryBtnText: { color: colors.paper.white, fontSize: fontSize.bodySmall, fontWeight: fontWeight.medium },
 });

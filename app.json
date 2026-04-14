@@ -9,7 +9,17 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wordmemo.app",
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.80364629052-foutf6riq3eo56qgm5f1bek34j9q2i4p"
+            ]
+          }
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {

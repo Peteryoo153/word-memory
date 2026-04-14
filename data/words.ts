@@ -1,4 +1,5 @@
 import { Word } from '../src/types';
+import { JUNIOR_TOEFL_WORDS } from '../src/data/juniorToeplWords';
 
 export const WORDS: Word[] = [
   {
@@ -181,4 +182,5 @@ export const WORDS: Word[] = [
     synonyms: ['flourish', 'thrive', 'expand'],
     antonyms: ['shrink', 'decline', 'wither'],
   },
+  ...JUNIOR_TOEFL_WORDS,
 ];

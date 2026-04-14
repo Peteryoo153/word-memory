@@ -4,21 +4,22 @@ import {
   SafeAreaView, Modal, Pressable,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { getSettings, saveSettings, getTodayLearnedCount, getTodayReviewWordIds } from '../../src/storage';
+import { Ionicons } from '@expo/vector-icons';
+import { getSettings, saveSettings } from '../../src/storage';
+import { getActiveWordbook, getProgress, getTodayLearnedCount, getDueWordIds } from '../../src/storage/wordbookStorage';
+import { colors, fontSize, fontWeight, fontFamily, spacing, radius, lineHeight } from '../../src/theme';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [dailyGoal, setDailyGoal] = useState(10);
+  const [dailyGoal, setDailyGoal]       = useState(10);
   const [learnedCount, setLearnedCount] = useState(0);
-  const [reviewCount, setReviewCount] = useState(0);
+  const [reviewCount, setReviewCount]   = useState(0);
+  const [bookName, setBookName]         = useState('');
   const [showGoalModal, setShowGoalModal] = useState(false);
-  const [tempGoal, setTempGoal] = useState(10);
+  const [tempGoal, setTempGoal]         = useState(10);
 
-  // 탭으로 돌아올 때마다 데이터 새로고침
   useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [])
+    useCallback(() => { loadData(); }, [])
   );
 
   async function loadData() {
@@ -26,11 +27,17 @@ export default function HomeScreen() {
     setDailyGoal(settings.dailyGoal);
     setTempGoal(settings.dailyGoal);
 
-    const learned = await getTodayLearnedCount();
-    setLearnedCount(learned);
-
-    const reviewIds = await getTodayReviewWordIds();
-    setReviewCount(reviewIds.length);
+    const book = await getActiveWordbook();
+    if (!book) {
+      setLearnedCount(0);
+      setReviewCount(0);
+      setBookName('');
+      return;
+    }
+    setBookName(book.name);
+    const progress = await getProgress(book.id);
+    setLearnedCount(getTodayLearnedCount(progress));
+    setReviewCount(getDueWordIds(progress).length);
   }
 
   async function handleSaveGoal() {
@@ -44,61 +51,114 @@ export default function HomeScreen() {
   }
 
   const progress = Math.min(learnedCount / dailyGoal, 1);
+  const isDone   = learnedCount >= dailyGoal;
 
   return (
     <SafeAreaView style={styles.container}>
+
+      {/* ── 헤더 ── */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>단어암기장</Text>
-          <Text style={styles.subtitle}>오늘도 함께 공부해요!</Text>
+          <Text style={styles.appTitle}>단어암기장</Text>
+          <Text style={styles.greeting}>
+            {isDone ? '오늘 목표 완료! 🎉' : '오늘도 단어를 외워봐요'}
+          </Text>
         </View>
-        {/* 목표 설정 버튼 */}
         <TouchableOpacity
-          style={styles.settingBtn}
+          style={styles.goalChip}
           onPress={() => { setTempGoal(dailyGoal); setShowGoalModal(true); }}
         >
-          <Text style={styles.settingBtnText}>목표 설정</Text>
+          <Ionicons name="flag-outline" size={13} color={colors.sage[600]} />
+          <Text style={styles.goalChipText}>목표 {dailyGoal}개</Text>
         </TouchableOpacity>
       </View>
 
-      {/* 오늘의 진도 */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>오늘의 목표</Text>
-        <Text style={styles.progressText}>
-          {learnedCount} / {dailyGoal} 단어
-        </Text>
-        <View style={styles.progressBarBg}>
-          <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
+      {/* ── 오늘의 진행 카드 ── */}
+      <View style={styles.progressCard}>
+        <View style={styles.progressCardTop}>
+          <View>
+            <Text style={styles.progressLabel}>오늘의 학습</Text>
+            <Text style={styles.progressCount}>
+              <Text style={styles.progressCountBig}>{learnedCount}</Text>
+              <Text style={styles.progressCountTotal}> / {dailyGoal}</Text>
+            </Text>
+          </View>
+          <View style={[styles.progressCircle, isDone && styles.progressCircleDone]}>
+            <Ionicons
+              name={isDone ? 'checkmark' : 'book-outline'}
+              size={26}
+              color={isDone ? colors.paper.white : colors.sage[600]}
+            />
+          </View>
         </View>
-        {learnedCount >= dailyGoal && (
-          <Text style={styles.doneText}>오늘 목표 달성!</Text>
-        )}
+
+        {/* 진행 바 */}
+        <View style={styles.barBg}>
+          <View style={[styles.barFill, { width: `${progress * 100}%` }]} />
+        </View>
+
+        <Text style={styles.barCaption}>
+          {isDone
+            ? '오늘 목표를 모두 채웠어요!'
+            : `${dailyGoal - learnedCount}개 남았어요`}
+        </Text>
       </View>
 
-      {/* 복습 알림 */}
+      {/* ── 단어장 이름 표시 ── */}
+      {bookName ? (
+        <TouchableOpacity
+          style={styles.bookChip}
+          onPress={() => router.push('/wordbook/list')}
+        >
+          <Ionicons name="library-outline" size={14} color={colors.sage[500]} />
+          <Text style={styles.bookChipText} numberOfLines={1}>{bookName}</Text>
+          <Ionicons name="chevron-forward" size={12} color={colors.sage[400]} />
+        </TouchableOpacity>
+      ) : null}
+
+      {/* ── 복습 알림 카드 ── */}
       {reviewCount > 0 && (
-        <View style={[styles.card, styles.reviewCard]}>
-          <Text style={styles.reviewText}>복습할 단어 {reviewCount}개가 있어요!</Text>
-          <TouchableOpacity
-            style={styles.reviewBtn}
-            onPress={() => router.push('/(tabs)/test')}
-          >
-            <Text style={styles.reviewBtnText}>복습하러 가기</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.reviewCard}
+          onPress={() => router.push('/(tabs)/test')}
+          activeOpacity={0.85}
+        >
+          <View style={styles.reviewLeft}>
+            <View style={styles.reviewBadge}>
+              <Text style={styles.reviewBadgeText}>{reviewCount}</Text>
+            </View>
+            <View>
+              <Text style={styles.reviewTitle}>복습할 단어가 있어요</Text>
+              <Text style={styles.reviewSub}>잊기 전에 다시 확인해봐요</Text>
+            </View>
+          </View>
+          <Ionicons name="arrow-forward" size={18} color={colors.terra[500]} />
+        </TouchableOpacity>
       )}
 
-      {/* 학습 시작 버튼 */}
-      <TouchableOpacity
-        style={styles.startBtn}
-        onPress={() => router.push('/(tabs)/study')}
-      >
-        <Text style={styles.startBtnText}>학습 시작하기</Text>
-      </TouchableOpacity>
+      {/* ── 하단 액션 ── */}
+      <View style={styles.actions}>
+        <TouchableOpacity
+          style={styles.startBtn}
+          onPress={() => router.push('/(tabs)/study')}
+          activeOpacity={0.88}
+        >
+          <Ionicons name="play" size={20} color={colors.paper.white} />
+          <Text style={styles.startBtnText}>학습 시작하기</Text>
+        </TouchableOpacity>
 
-      {/* 목표 설정 모달 */}
+        <TouchableOpacity
+          style={styles.listBtn}
+          onPress={() => router.push('/wordbook/list')}
+        >
+          <Ionicons name="albums-outline" size={18} color={colors.sage[600]} />
+          <Text style={styles.listBtnText}>단어장 목록</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* ── 목표 설정 모달 ── */}
       <Modal visible={showGoalModal} transparent animationType="fade">
-        <Pressable style={styles.modalOverlay} onPress={() => setShowGoalModal(false)}>
+        <Pressable style={styles.overlay} onPress={() => setShowGoalModal(false)}>
           <Pressable style={styles.modalBox} onPress={() => {}}>
             <Text style={styles.modalTitle}>하루 목표 설정</Text>
             <Text style={styles.modalSub}>5개 단위로 조절할 수 있어요</Text>
@@ -107,12 +167,12 @@ export default function HomeScreen() {
               <TouchableOpacity style={styles.goalBtn} onPress={() => adjustGoal(-5)}>
                 <Text style={styles.goalBtnText}>−</Text>
               </TouchableOpacity>
-              <Text style={styles.goalValue}>{tempGoal}개</Text>
+              <Text style={styles.goalValue}>{tempGoal}</Text>
               <TouchableOpacity style={styles.goalBtn} onPress={() => adjustGoal(5)}>
                 <Text style={styles.goalBtnText}>+</Text>
               </TouchableOpacity>
             </View>
-
+            <Text style={styles.goalUnit}>개 단어</Text>
             <Text style={styles.goalMin}>최소 5개</Text>
 
             <TouchableOpacity style={styles.saveBtn} onPress={handleSaveGoal}>
@@ -128,175 +188,306 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
-    padding: 20,
+    backgroundColor: colors.paper.bg,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
   },
+
+  // ── 헤더
   header: {
-    marginTop: 20,
-    marginBottom: 24,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    marginBottom: spacing.xl,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#111827',
+  appTitle: {
+    fontSize: fontSize.h1,
+    fontWeight: fontWeight.extrabold,
+    color: colors.paper[900],
+    fontFamily: fontFamily.serif,
+    letterSpacing: -0.5,
   },
-  subtitle: {
-    fontSize: 15,
-    color: '#6B7280',
+  greeting: {
+    fontSize: fontSize.bodySmall,
+    color: colors.paper[500],
     marginTop: 4,
   },
-  settingBtn: {
-    backgroundColor: '#E5E7EB',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+  goalChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: colors.sage[50],
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.sage[200],
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     marginTop: 4,
   },
-  settingBtnText: {
-    fontSize: 13,
-    color: '#374151',
-    fontWeight: '600',
+  goalChipText: {
+    fontSize: fontSize.label,
+    color: colors.sage[700],
+    fontWeight: fontWeight.semibold,
   },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+
+  // ── 진행 카드
+  progressCard: {
+    backgroundColor: colors.sage[600],
+    borderRadius: radius['2xl'],
+    padding: spacing['2xl'],
+    marginBottom: spacing.md,
+    shadowColor: colors.sage[800],
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 12 },
+    shadowRadius: 24,
+    elevation: 8,
   },
-  cardTitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 8,
-    fontWeight: '600',
+  progressCardTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.xl,
   },
-  progressText: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 12,
+  progressLabel: {
+    fontSize: fontSize.label,
+    color: 'rgba(255,255,255,0.65)',
+    fontWeight: fontWeight.semibold,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.sm,
   },
-  progressBarBg: {
-    height: 10,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 5,
-    overflow: 'hidden',
+  progressCount: {
+    lineHeight: fontSize.h1 * 1.1,
   },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#4A90D9',
-    borderRadius: 5,
+  progressCountBig: {
+    fontSize: 44,
+    fontWeight: fontWeight.extrabold,
+    color: colors.paper.white,
   },
-  doneText: {
-    marginTop: 10,
-    fontSize: 15,
-    color: '#10B981',
-    fontWeight: '600',
+  progressCountTotal: {
+    fontSize: fontSize.h1,
+    fontWeight: fontWeight.medium,
+    color: 'rgba(255,255,255,0.6)',
   },
-  reviewCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#F59E0B',
-  },
-  reviewText: {
-    fontSize: 15,
-    color: '#92400E',
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  reviewBtn: {
-    backgroundColor: '#F59E0B',
-    borderRadius: 10,
-    paddingVertical: 10,
+  progressCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.25)',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  reviewBtnText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
+  progressCircleDone: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderColor: 'rgba(255,255,255,0.5)',
+  },
+  barBg: {
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: spacing.sm,
+  },
+  barFill: {
+    height: '100%',
+    backgroundColor: colors.paper.white,
+    borderRadius: 2,
+  },
+  barCaption: {
+    fontSize: fontSize.caption,
+    color: 'rgba(255,255,255,0.6)',
+  },
+
+  // ── 단어장 칩
+  bookChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    alignSelf: 'flex-start',
+    backgroundColor: colors.paper.white,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.paper[200],
+    paddingHorizontal: spacing.md,
+    paddingVertical: 7,
+    marginBottom: spacing.md,
+    maxWidth: '80%',
+  },
+  bookChipText: {
+    fontSize: fontSize.caption,
+    color: colors.paper[600],
+    fontWeight: fontWeight.medium,
+  },
+
+  // ── 복습 카드
+  reviewCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.terra[100],
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.terra[200],
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  reviewLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  reviewBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.terra[500],
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  reviewBadgeText: {
+    color: colors.paper.white,
+    fontSize: fontSize.bodySmall,
+    fontWeight: fontWeight.bold,
+  },
+  reviewTitle: {
+    fontSize: fontSize.bodySmall,
+    fontWeight: fontWeight.semibold,
+    color: colors.terra[700],
+  },
+  reviewSub: {
+    fontSize: fontSize.caption,
+    color: colors.terra[500],
+    marginTop: 2,
+  },
+
+  // ── 하단 액션
+  actions: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    paddingBottom: spacing.xl,
+    gap: spacing.md,
   },
   startBtn: {
-    backgroundColor: '#4A90D9',
-    borderRadius: 16,
-    paddingVertical: 16,
+    flexDirection: 'row',
+    backgroundColor: colors.sage[600],
+    borderRadius: radius['2xl'],
+    paddingVertical: 18,
     alignItems: 'center',
-    marginTop: 8,
+    justifyContent: 'center',
+    gap: spacing.sm,
+    shadowColor: colors.sage[800],
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 20,
+    elevation: 6,
   },
   startBtnText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '700',
+    color: colors.paper.white,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 0.2,
   },
-  // 모달
-  modalOverlay: {
+  listBtn: {
+    flexDirection: 'row',
+    borderRadius: radius['2xl'],
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.paper.white,
+    borderWidth: 1,
+    borderColor: colors.paper[200],
+  },
+  listBtnText: {
+    color: colors.sage[600],
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.semibold,
+  },
+
+  // ── 모달
+  overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(15,13,26,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalBox: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: 28,
+    backgroundColor: colors.paper.white,
+    borderRadius: radius['2xl'],
+    padding: spacing['2xl'],
     width: 300,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 20 },
+    shadowRadius: 40,
+    elevation: 20,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#111827',
-    marginBottom: 6,
+    fontSize: fontSize.h2,
+    fontWeight: fontWeight.bold,
+    color: colors.paper[900],
+    marginBottom: spacing.xs,
   },
   modalSub: {
-    fontSize: 13,
-    color: '#9BA3AF',
-    marginBottom: 24,
+    fontSize: fontSize.caption,
+    color: colors.paper[400],
+    marginBottom: spacing['2xl'],
   },
   goalRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 24,
-    marginBottom: 8,
+    gap: spacing.xl,
+    marginBottom: spacing.xs,
   },
   goalBtn: {
     width: 48,
     height: 48,
-    borderRadius: 24,
-    backgroundColor: '#F3F4F6',
+    borderRadius: radius.xl,
+    backgroundColor: colors.paper.bg,
+    borderWidth: 1,
+    borderColor: colors.paper[200],
     justifyContent: 'center',
     alignItems: 'center',
   },
   goalBtnText: {
     fontSize: 24,
-    fontWeight: '700',
-    color: '#374151',
+    fontWeight: fontWeight.semibold,
+    color: colors.paper[700],
   },
   goalValue: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: '#4A90D9',
+    fontSize: 48,
+    fontWeight: fontWeight.extrabold,
+    color: colors.sage[600],
     minWidth: 80,
     textAlign: 'center',
   },
+  goalUnit: {
+    fontSize: fontSize.bodySmall,
+    color: colors.paper[500],
+    marginBottom: spacing.xs,
+  },
   goalMin: {
-    fontSize: 12,
-    color: '#C4C9D4',
-    marginBottom: 24,
+    fontSize: fontSize.caption,
+    color: colors.paper[300],
+    marginBottom: spacing['2xl'],
   },
   saveBtn: {
-    backgroundColor: '#4A90D9',
-    borderRadius: 14,
-    paddingVertical: 14,
+    backgroundColor: colors.sage[600],
+    borderRadius: radius.lg,
+    paddingVertical: 15,
     paddingHorizontal: 48,
+    shadowColor: colors.sage[800],
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 12,
+    elevation: 4,
   },
   saveBtnText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
+    color: colors.paper.white,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.bold,
   },
 });

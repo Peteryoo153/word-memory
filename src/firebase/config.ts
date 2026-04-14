@@ -14,10 +14,11 @@ const firebaseConfig = {
 };
 
 // 앱이 이미 초기화됐을 때 중복 초기화 방지
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const isFirstInit = getApps().length === 0;
+const app = isFirstInit ? initializeApp(firebaseConfig) : getApps()[0];
 
 // Auth: AsyncStorage로 로그인 상태 유지 (앱 껐다 켜도 로그인 유지)
-const auth = getApps().length === 0
+const auth = isFirstInit
   ? initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) })
   : getAuth(app);
 

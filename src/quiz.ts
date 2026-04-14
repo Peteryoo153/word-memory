@@ -20,17 +20,17 @@ function shuffle<T>(arr: T[]): T[] {
 // 단어 목록에서 퀴즈 문항 생성
 // - words: 문제로 낼 단어들
 // - count: 문항 수 (기본 5)
-export function buildQuiz(words: Word[], count: number = 5): QuizQuestion[] {
+// - distractorPool: 오답 보기 추출 대상 (미지정 시 기본 WORDS)
+export function buildQuiz(words: Word[], count: number = 5, distractorPool?: Word[]): QuizQuestion[] {
   const pool = shuffle(words).slice(0, count);
+  const wrongSource = distractorPool ?? WORDS;
 
   return pool.map((word) => {
-    // 오답 보기: pool에 없는 다른 단어들의 뜻에서 3개 추출
-    const wrongPool = WORDS.filter((w) => w.id !== word.id);
+    const wrongPool = wrongSource.filter((w) => w.id !== word.id);
     const wrongs = shuffle(wrongPool)
       .slice(0, 3)
       .map((w) => w.meaning);
 
-    // 정답 포함해서 섞기
     const allChoices = shuffle([word.meaning, ...wrongs]);
     const answerIndex = allChoices.indexOf(word.meaning);
 
