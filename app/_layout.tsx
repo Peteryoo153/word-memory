@@ -16,6 +16,10 @@ export default function RootLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen
+        name="plan"
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
         name="wordbook/list"
         options={{ presentation: 'card', animation: 'slide_from_right' }}
       />

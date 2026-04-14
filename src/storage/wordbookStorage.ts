@@ -186,6 +186,19 @@ export function getTodayLearnedCount(progress: WordbookProgress): number {
     .length;
 }
 
+/** 모든 단어장의 진행 데이터를 초기화 */
+export async function resetAllProgress(): Promise<void> {
+  const ids = await getWordbookIds();
+  await Promise.all(
+    ids.map((id) =>
+      AsyncStorage.setItem(
+        KEYS.PROGRESS(id),
+        JSON.stringify(makeEmptyProgress(id)),
+      ),
+    ),
+  );
+}
+
 // ── 초기 시드 ────────────────────────────────────────
 
 /**

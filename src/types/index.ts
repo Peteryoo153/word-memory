@@ -24,3 +24,18 @@ export interface WordProgress {
 export interface AppSettings {
   dailyGoal: number;  // 하루 목표 단어 수 (기본 10)
 }
+
+// 학습 레벨
+export type StudyLevel = 'beginner' | 'intermediate' | 'advanced' | 'master';
+
+// 학습 플랜
+export interface StudyPlan {
+  wordbookId: string;
+  level: StudyLevel;            // 학습 레벨
+  dailyGoal: number;            // 하루 목표 단어 수 (레벨에서 자동 설정 or 마스터 직접 입력)
+  studyPeriodDays: number;      // 학습 기간 (일)
+  days: string[];               // 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
+  alarmTime: string;            // 'HH:MM'
+  alarmEnabled: boolean;
+  dailyScores?: Record<string, number>; // 날짜(YYYY-MM-DD) → 테스트에서 맞춘 개수
+}

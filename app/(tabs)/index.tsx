@@ -1,80 +1,117 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
-  SafeAreaView, Modal, Pressable,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getSettings, saveSettings } from '../../src/storage';
+import { getSettings, getStudyPlan } from '../../src/storage';
+import { StudyPlan } from '../../src/types';
 import { getActiveWordbook, getProgress, getTodayLearnedCount, getDueWordIds } from '../../src/storage/wordbookStorage';
-import { colors, fontSize, fontWeight, fontFamily, spacing, radius, lineHeight } from '../../src/theme';
+import { colors, fontSize, fontWeight, fontFamily, spacing, radius } from '../../src/theme';
+
+const DAY_LABELS: Record<string, string> = {
+  mon: '월', tue: '화', wed: '수', thu: '목', fri: '금', sat: '토', sun: '일',
+};
+const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+const today = new Date();
+const todayKey = DAY_ORDER[today.getDay() === 0 ? 6 : today.getDay() - 1];
+
+/** 이번 주 각 요일의 날짜(YYYY-MM-DD) 반환 */
+function getThisWeekDates(): Record<string, string> {
+  const now = new Date();
+  const dow = now.getDay(); // 0=sun
+  const mondayOffset = dow === 0 ? -6 : 1 - dow;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + mondayOffset);
+  const result: Record<string, string> = {};
+  DAY_ORDER.forEach((key, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    result[key] = d.toISOString().split('T')[0];
+  });
+  return result;
+}
+
+const THIS_WEEK_DATES = getThisWeekDates();
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [dailyGoal, setDailyGoal]       = useState(10);
-  const [learnedCount, setLearnedCount] = useState(0);
-  const [reviewCount, setReviewCount]   = useState(0);
-  const [bookName, setBookName]         = useState('');
-  const [showGoalModal, setShowGoalModal] = useState(false);
-  const [tempGoal, setTempGoal]         = useState(10);
+  const [dailyGoal, setDailyGoal]             = useState(10);
+  const [learnedCount, setLearnedCount]       = useState(0);
+  const [reviewCount, setReviewCount]         = useState(0);
+  const [plan, setPlan]                       = useState<StudyPlan | null>(null);
+  const [dailyLearnedMap, setDailyLearnedMap] = useState<Record<string, number>>({});
 
   useFocusEffect(
     useCallback(() => { loadData(); }, [])
   );
 
   async function loadData() {
-    const settings = await getSettings();
-    setDailyGoal(settings.dailyGoal);
-    setTempGoal(settings.dailyGoal);
+    const [settings, book, studyPlan] = await Promise.all([
+      getSettings(),
+      getActiveWordbook(),
+      getStudyPlan(),
+    ]);
+    // 플랜의 dailyGoal을 우선 사용, 없으면 settings fallback
+    setDailyGoal(studyPlan?.dailyGoal ?? settings.dailyGoal);
+    setPlan(studyPlan);
 
-    const book = await getActiveWordbook();
     if (!book) {
       setLearnedCount(0);
       setReviewCount(0);
-      setBookName('');
+      setDailyLearnedMap({});
       return;
     }
-    setBookName(book.name);
     const progress = await getProgress(book.id);
-    setLearnedCount(getTodayLearnedCount(progress));
+    const goal = studyPlan?.dailyGoal ?? settings.dailyGoal;
+    setLearnedCount(Math.min(getTodayLearnedCount(progress), goal));
     setReviewCount(getDueWordIds(progress).length);
-  }
 
-  async function handleSaveGoal() {
-    await saveSettings({ dailyGoal: tempGoal });
-    setDailyGoal(tempGoal);
-    setShowGoalModal(false);
-  }
-
-  function adjustGoal(delta: number) {
-    setTempGoal((prev) => Math.max(5, prev + delta));
+    // 각 요일의 실제 학습 단어 수 계산
+    const learnedMap: Record<string, number> = {};
+    DAY_ORDER.forEach((key) => {
+      const dateStr = THIS_WEEK_DATES[key];
+      learnedMap[key] = Object.values(progress.ebbinghausData)
+        .filter((e) => e.lastStudiedAt === dateStr).length;
+    });
+    setDailyLearnedMap(learnedMap);
   }
 
   const progress = Math.min(learnedCount / dailyGoal, 1);
   const isDone   = learnedCount >= dailyGoal;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        contentInsetAdjustmentBehavior="automatic"
+      >
 
       {/* ── 헤더 ── */}
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerText}>
           <Text style={styles.appTitle}>단어암기장</Text>
           <Text style={styles.greeting}>
             {isDone ? '오늘 목표 완료! 🎉' : '오늘도 단어를 외워봐요'}
           </Text>
         </View>
-        <TouchableOpacity
-          style={styles.goalChip}
-          onPress={() => { setTempGoal(dailyGoal); setShowGoalModal(true); }}
-        >
-          <Ionicons name="flag-outline" size={13} color={colors.sage[600]} />
-          <Text style={styles.goalChipText}>목표 {dailyGoal}개</Text>
-        </TouchableOpacity>
       </View>
 
       {/* ── 오늘의 진행 카드 ── */}
-      <View style={styles.progressCard}>
+      <TouchableOpacity
+        style={styles.progressCard}
+        onPress={() => {
+          if (!plan || plan.days.length === 0) {
+            router.push('/plan' as any);
+          } else {
+            router.push('/(tabs)/study');
+          }
+        }}
+        activeOpacity={0.88}
+      >
         <View style={styles.progressCardTop}>
           <View>
             <Text style={styles.progressLabel}>오늘의 학습</Text>
@@ -92,29 +129,94 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* 진행 바 */}
         <View style={styles.barBg}>
           <View style={[styles.barFill, { width: `${progress * 100}%` }]} />
         </View>
-
         <Text style={styles.barCaption}>
-          {isDone
-            ? '오늘 목표를 모두 채웠어요!'
-            : `${dailyGoal - learnedCount}개 남았어요`}
+          {!plan || plan.days.length === 0
+            ? '학습설정을 먼저 해주세요!'
+            : isDone
+              ? '오늘 목표를 모두 채웠어요!'
+              : `${dailyGoal - learnedCount}개 남았어요 · 탭해서 학습 시작`}
         </Text>
-      </View>
+      </TouchableOpacity>
 
-      {/* ── 단어장 이름 표시 ── */}
-      {bookName ? (
-        <TouchableOpacity
-          style={styles.bookChip}
-          onPress={() => router.push('/wordbook/list')}
-        >
-          <Ionicons name="library-outline" size={14} color={colors.sage[500]} />
-          <Text style={styles.bookChipText} numberOfLines={1}>{bookName}</Text>
-          <Ionicons name="chevron-forward" size={12} color={colors.sage[400]} />
-        </TouchableOpacity>
-      ) : null}
+      {/* ── 학습 플랜 대시보드 ── */}
+      {plan && plan.days.length > 0 && (
+        <View style={styles.planCard}>
+          <View style={styles.planHeader}>
+            <View style={styles.planTitleRow}>
+              <Ionicons name="calendar-outline" size={15} color={colors.sage[600]} />
+              <Text style={styles.planTitle}>이번 주 학습 플랜</Text>
+            </View>
+            <TouchableOpacity onPress={() => router.push('/plan' as any)} style={styles.planEditBtn}>
+              <Text style={styles.planEditTxt}>편집</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.planDays}>
+            {DAY_ORDER.map((key) => {
+              const isStudyDay = plan.days.includes(key);
+              const isToday    = key === todayKey;
+              const dateStr    = THIS_WEEK_DATES[key];
+              const testScore    = plan.dailyScores?.[dateStr];
+              const hasScore     = testScore !== undefined;
+              const learnedOnDay = dailyLearnedMap[key] ?? 0;
+              const hasLearned   = learnedOnDay > 0;
+              const isDone       = hasScore || hasLearned;
+              // 표시값: 테스트 점수 > 실제 학습 수 (미학습은 숫자 없이 비활성 표시)
+              const displayCount = hasScore ? testScore : learnedOnDay;
+              return (
+                <View key={key} style={styles.planDayCol}>
+                  <Text style={[
+                    styles.planDayLabel,
+                    isToday && styles.planDayLabelToday,
+                    isStudyDay && !isDone && styles.planDayLabelInactive,
+                  ]}>
+                    {DAY_LABELS[key]}
+                  </Text>
+                  <View style={[
+                    styles.planDayBox,
+                    isStudyDay && !isDone && styles.planDayBoxInactive,
+                    isStudyDay && isDone && styles.planDayBoxStudy,
+                    isToday && isStudyDay && !isDone && styles.planDayBoxTodayInactive,
+                    hasScore && styles.planDayBoxDone,
+                    !hasScore && hasLearned && styles.planDayBoxLearned,
+                  ]}>
+                    {isStudyDay ? (
+                      isDone ? (
+                        <Text style={[
+                          styles.planDayCount,
+                          hasScore && styles.planDayCountDone,
+                          !hasScore && hasLearned && styles.planDayCountLearned,
+                        ]}>
+                          {displayCount}
+                        </Text>
+                      ) : (
+                        <Text style={styles.planDayDash}>—</Text>
+                      )
+                    ) : (
+                      <Text style={styles.planDayDash}>—</Text>
+                    )}
+                  </View>
+                  {isStudyDay && isDone && (
+                    <Text style={[styles.planDayUnit]}>
+                      {hasScore ? '점' : '개'}
+                    </Text>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+
+          {plan.alarmEnabled && (
+            <View style={styles.planAlarm}>
+              <Ionicons name="alarm-outline" size={13} color={colors.paper[400]} />
+              <Text style={styles.planAlarmTxt}>매일 {plan.alarmTime} 알람</Text>
+            </View>
+          )}
+        </View>
+      )}
 
       {/* ── 복습 알림 카드 ── */}
       {reviewCount > 0 && (
@@ -139,58 +241,41 @@ export default function HomeScreen() {
       {/* ── 하단 액션 ── */}
       <View style={styles.actions}>
         <TouchableOpacity
-          style={styles.startBtn}
-          onPress={() => router.push('/(tabs)/study')}
-          activeOpacity={0.88}
-        >
-          <Ionicons name="play" size={20} color={colors.paper.white} />
-          <Text style={styles.startBtnText}>학습 시작하기</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
           style={styles.listBtn}
           onPress={() => router.push('/wordbook/list')}
+          activeOpacity={0.85}
         >
           <Ionicons name="albums-outline" size={18} color={colors.sage[600]} />
           <Text style={styles.listBtnText}>단어장 목록</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.planBtn}
+          onPress={() => router.push('/plan' as any)}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="options-outline" size={18} color={colors.paper[600]} />
+          <Text style={styles.planBtnText}>학습 플랜 설정</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* ── 목표 설정 모달 ── */}
-      <Modal visible={showGoalModal} transparent animationType="fade">
-        <Pressable style={styles.overlay} onPress={() => setShowGoalModal(false)}>
-          <Pressable style={styles.modalBox} onPress={() => {}}>
-            <Text style={styles.modalTitle}>하루 목표 설정</Text>
-            <Text style={styles.modalSub}>5개 단위로 조절할 수 있어요</Text>
+      </ScrollView>
 
-            <View style={styles.goalRow}>
-              <TouchableOpacity style={styles.goalBtn} onPress={() => adjustGoal(-5)}>
-                <Text style={styles.goalBtnText}>−</Text>
-              </TouchableOpacity>
-              <Text style={styles.goalValue}>{tempGoal}</Text>
-              <TouchableOpacity style={styles.goalBtn} onPress={() => adjustGoal(5)}>
-                <Text style={styles.goalBtnText}>+</Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.goalUnit}>개 단어</Text>
-            <Text style={styles.goalMin}>최소 5개</Text>
-
-            <TouchableOpacity style={styles.saveBtn} onPress={handleSaveGoal}>
-              <Text style={styles.saveBtnText}>저장</Text>
-            </TouchableOpacity>
-          </Pressable>
-        </Pressable>
-      </Modal>
     </SafeAreaView>
   );
 }
+
+const CARD_RADIUS = radius.xl; // 24 — 모든 카드/버튼 통일
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.paper.bg,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xl,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 100,
   },
 
   // ── 헤더
@@ -199,7 +284,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: spacing.xl,
+    gap: spacing.md,
   },
+  headerText: { flex: 1 },
   appTitle: {
     fontSize: fontSize.h1,
     fontWeight: fontWeight.extrabold,
@@ -212,30 +299,15 @@ const styles = StyleSheet.create({
     color: colors.paper[500],
     marginTop: 4,
   },
-  goalChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: colors.sage[50],
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.sage[200],
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginTop: 4,
-  },
-  goalChipText: {
-    fontSize: fontSize.label,
-    color: colors.sage[700],
-    fontWeight: fontWeight.semibold,
-  },
-
   // ── 진행 카드
   progressCard: {
     backgroundColor: colors.sage[600],
-    borderRadius: radius['2xl'],
-    padding: spacing['2xl'],
-    marginBottom: spacing.md,
+    borderRadius: CARD_RADIUS,
+    padding: 20,
+    marginBottom: 14,
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
     shadowColor: colors.sage[800],
     shadowOpacity: 0.25,
     shadowOffset: { width: 0, height: 12 },
@@ -256,18 +328,18 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginBottom: spacing.sm,
   },
-  progressCount: {
-    lineHeight: fontSize.h1 * 1.1,
-  },
+  progressCount: { lineHeight: 52 },
   progressCountBig: {
     fontSize: 44,
     fontWeight: fontWeight.extrabold,
     color: colors.paper.white,
+    lineHeight: 52,
   },
   progressCountTotal: {
     fontSize: fontSize.h1,
     fontWeight: fontWeight.medium,
     color: 'rgba(255,255,255,0.6)',
+    lineHeight: 52,
   },
   progressCircle: {
     width: 56,
@@ -295,30 +367,111 @@ const styles = StyleSheet.create({
     backgroundColor: colors.paper.white,
     borderRadius: 2,
   },
-  barCaption: {
-    fontSize: fontSize.caption,
-    color: 'rgba(255,255,255,0.6)',
-  },
+  barCaption: { fontSize: fontSize.caption, color: 'rgba(255,255,255,0.6)' },
 
-  // ── 단어장 칩
-  bookChip: {
+  // ── 플랜 대시보드
+  planCard: {
+    backgroundColor: colors.paper.white,
+    borderRadius: CARD_RADIUS,
+    borderWidth: 0.5,
+    borderColor: colors.paper[200],
+    padding: spacing.lg,
+    marginBottom: 14,
+  },
+  planHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  planTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    alignSelf: 'flex-start',
-    backgroundColor: colors.paper.white,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.paper[200],
-    paddingHorizontal: spacing.md,
-    paddingVertical: 7,
-    marginBottom: spacing.md,
-    maxWidth: '80%',
+    gap: 6,
   },
-  bookChipText: {
+  planTitle: {
+    fontSize: fontSize.bodySmall,
+    fontWeight: fontWeight.semibold,
+    color: colors.paper[700],
+  },
+  planEditBtn: { paddingHorizontal: 4, paddingVertical: 2 },
+  planEditTxt: {
     fontSize: fontSize.caption,
-    color: colors.paper[600],
+    color: colors.sage[500],
+    fontWeight: fontWeight.semibold,
+  },
+  planDays: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  planDayCol: {
+    alignItems: 'center',
+    gap: 4,
+    flex: 1,
+  },
+  planDayLabel: {
+    fontSize: 11,
     fontWeight: fontWeight.medium,
+    color: colors.paper[400],
+  },
+  planDayLabelToday: { color: colors.sage[600], fontWeight: fontWeight.bold },
+  planDayLabelInactive: { color: colors.paper[300] },
+  planDayBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: colors.paper.bg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.paper[100],
+  },
+  planDayBoxInactive: {
+    backgroundColor: colors.paper.bg,
+    borderColor: colors.paper[100],
+    opacity: 0.45,
+  },
+  planDayBoxTodayInactive: {
+    backgroundColor: colors.sage[50],
+    borderColor: colors.sage[200],
+    borderStyle: 'dashed' as const,
+    opacity: 0.7,
+  },
+  planDayBoxStudy: {
+    backgroundColor: colors.sage[50],
+    borderColor: colors.sage[200],
+  },
+  planDayBoxDone: {
+    backgroundColor: colors.terra[100],
+    borderColor: colors.terra[200],
+  },
+  planDayBoxLearned: {
+    backgroundColor: colors.sage[100],
+    borderColor: colors.sage[300],
+  },
+  planDayCount: {
+    fontSize: 13,
+    fontWeight: fontWeight.bold,
+    color: colors.sage[600],
+  },
+  planDayCountDone: { color: colors.terra[600] },
+  planDayCountLearned: { color: colors.sage[700] },
+  planDayDash: { fontSize: 12, color: colors.paper[200] },
+  planDayUnit: {
+    fontSize: 10,
+    color: colors.sage[400],
+    fontWeight: fontWeight.medium,
+  },
+  planAlarm: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 4,
+  },
+  planAlarmTxt: {
+    fontSize: fontSize.caption,
+    color: colors.paper[400],
   },
 
   // ── 복습 카드
@@ -327,11 +480,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.terra[100],
-    borderRadius: radius.xl,
+    borderRadius: CARD_RADIUS,
     borderWidth: 1,
     borderColor: colors.terra[200],
-    padding: spacing.lg,
-    marginBottom: spacing.xl,
+    padding: 20,
+    marginBottom: 14,
+    width: '100%',
   },
   reviewLeft: {
     flexDirection: 'row',
@@ -364,130 +518,46 @@ const styles = StyleSheet.create({
 
   // ── 하단 액션
   actions: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    paddingBottom: spacing.xl,
-    gap: spacing.md,
-  },
-  startBtn: {
-    flexDirection: 'row',
-    backgroundColor: colors.sage[600],
-    borderRadius: radius['2xl'],
-    paddingVertical: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    shadowColor: colors.sage[800],
-    shadowOpacity: 0.25,
-    shadowOffset: { width: 0, height: 10 },
-    shadowRadius: 20,
-    elevation: 6,
-  },
-  startBtnText: {
-    color: colors.paper.white,
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
-    letterSpacing: 0.2,
+    gap: 12,
+    marginTop: 4,
+    paddingBottom: 40,
   },
   listBtn: {
     flexDirection: 'row',
-    borderRadius: radius['2xl'],
-    paddingVertical: 16,
+    borderRadius: CARD_RADIUS,
+    paddingVertical: 18,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
     backgroundColor: colors.paper.white,
     borderWidth: 1,
     borderColor: colors.paper[200],
+    shadowColor: colors.sage[800],
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    elevation: 3,
   },
   listBtnText: {
     color: colors.sage[600],
     fontSize: fontSize.body,
     fontWeight: fontWeight.semibold,
   },
-
-  // ── 모달
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15,13,26,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalBox: {
-    backgroundColor: colors.paper.white,
-    borderRadius: radius['2xl'],
-    padding: spacing['2xl'],
-    width: 300,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 20 },
-    shadowRadius: 40,
-    elevation: 20,
-  },
-  modalTitle: {
-    fontSize: fontSize.h2,
-    fontWeight: fontWeight.bold,
-    color: colors.paper[900],
-    marginBottom: spacing.xs,
-  },
-  modalSub: {
-    fontSize: fontSize.caption,
-    color: colors.paper[400],
-    marginBottom: spacing['2xl'],
-  },
-  goalRow: {
+  planBtn: {
     flexDirection: 'row',
+    borderRadius: CARD_RADIUS,
+    paddingVertical: 16,
     alignItems: 'center',
-    gap: spacing.xl,
-    marginBottom: spacing.xs,
-  },
-  goalBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.xl,
-    backgroundColor: colors.paper.bg,
-    borderWidth: 1,
-    borderColor: colors.paper[200],
     justifyContent: 'center',
-    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.paper.white,
+    borderWidth: 1,
+    borderColor: colors.paper[100],
   },
-  goalBtnText: {
-    fontSize: 24,
-    fontWeight: fontWeight.semibold,
-    color: colors.paper[700],
-  },
-  goalValue: {
-    fontSize: 48,
-    fontWeight: fontWeight.extrabold,
-    color: colors.sage[600],
-    minWidth: 80,
-    textAlign: 'center',
-  },
-  goalUnit: {
-    fontSize: fontSize.bodySmall,
-    color: colors.paper[500],
-    marginBottom: spacing.xs,
-  },
-  goalMin: {
-    fontSize: fontSize.caption,
-    color: colors.paper[300],
-    marginBottom: spacing['2xl'],
-  },
-  saveBtn: {
-    backgroundColor: colors.sage[600],
-    borderRadius: radius.lg,
-    paddingVertical: 15,
-    paddingHorizontal: 48,
-    shadowColor: colors.sage[800],
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  saveBtnText: {
-    color: colors.paper.white,
+  planBtnText: {
+    color: colors.paper[600],
     fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.medium,
   },
+
 });

@@ -5,15 +5,19 @@ import {
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getActiveWordbook, getProgress, markWordResult, getDueWordIds } from '../../src/storage/wordbookStorage';
+import { getActiveWordbook, getProgress } from '../../src/storage/wordbookStorage';
+import { saveStudyPlanScore } from '../../src/storage';
+import { consumeTodayTestIntent } from '../../src/studyIntent';
 import { toWord } from '../../src/types/wordbook';
 import { buildQuiz, QuizQuestion } from '../../src/quiz';
 import { Word } from '../../src/types';
 import { speakWord } from '../../src/tts';
 import { colors, fontSize, fontWeight, fontFamily, spacing, radius, lineHeight, letterSpacing } from '../../src/theme';
+import { auth } from '../../src/firebase/config';
+import { updateTestScore } from '../../src/firebase/groupStorage';
 
 type Mode = 'select' | 'quiz' | 'result';
-type TestType = 'quick' | 'review';
+type TestType = 'today' | 'all';
 
 interface AnswerRecord {
   question: QuizQuestion;
@@ -23,8 +27,7 @@ interface AnswerRecord {
 
 export default function TestScreen() {
   const [mode, setMode] = useState<Mode>('select');
-  const [testType, setTestType] = useState<TestType>('quick');
-  const [reviewCount, setReviewCount] = useState(0);
+  const [testType, setTestType] = useState<TestType>('today');
   const [activeWordbookId, setActiveWordbookId] = useState<string | null>(null);
 
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -34,20 +37,35 @@ export default function TestScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadReviewCount();
-      setMode('select');
+      if (consumeTodayTestIntent()) {
+        startTodayTest();
+      } else {
+        setMode('select');
+      }
     }, [])
   );
 
-  async function loadReviewCount() {
+  async function startTodayTest() {
     const book = await getActiveWordbook();
-    if (!book) { setReviewCount(0); return; }
-    setActiveWordbookId(book.id);
+    if (!book) { setMode('select'); return; }
     const progress = await getProgress(book.id);
-    setReviewCount(getDueWordIds(progress).length);
+    const today = new Date().toISOString().split('T')[0];
+    const allWords = book.words.map(toWord);
+    const todayWords = book.words
+      .filter((w) => progress.ebbinghausData[w.id]?.lastStudiedAt === today)
+      .map(toWord);
+    if (todayWords.length === 0) { setMode('select'); return; }
+    const quiz = buildQuiz(todayWords, todayWords.length, allWords);
+    setQuestions(quiz);
+    setCurrentIdx(0);
+    setSelected(null);
+    setRecords([]);
+    setTestType('today');
+    setActiveWordbookId(book.id);
+    setMode('quiz');
   }
 
-  async function startQuick() {
+  async function startAllLearnedTest() {
     const book = await getActiveWordbook();
     if (!book) return;
     const progress = await getProgress(book.id);
@@ -55,29 +73,14 @@ export default function TestScreen() {
     const learnedWords = book.words
       .filter((w) => progress.ebbinghausData[w.id]?.learned)
       .map(toWord);
-    const pool = learnedWords.length >= 5 ? learnedWords : allWords;
-    const quiz = buildQuiz(pool, 5, allWords);
+    if (learnedWords.length === 0) return;
+    const quiz = buildQuiz(learnedWords, learnedWords.length, allWords);
     setQuestions(quiz);
     setCurrentIdx(0);
     setSelected(null);
     setRecords([]);
-    setTestType('quick');
-    setMode('quiz');
-  }
-
-  async function startReview() {
-    const book = await getActiveWordbook();
-    if (!book) return;
-    const progress = await getProgress(book.id);
-    const dueIds = getDueWordIds(progress);
-    const allWords = book.words.map(toWord);
-    const dueWords = book.words.filter((w) => dueIds.includes(w.id)).map(toWord);
-    const quiz = buildQuiz(dueWords, dueWords.length, allWords);
-    setQuestions(quiz);
-    setCurrentIdx(0);
-    setSelected(null);
-    setRecords([]);
-    setTestType('review');
+    setTestType('all');
+    setActiveWordbookId(book.id);
     setMode('quiz');
   }
 
@@ -94,13 +97,19 @@ export default function TestScreen() {
     const newRecord: AnswerRecord = { question: q, chosen: selected, correct };
     const newRecords = [...records, newRecord];
 
-    if (testType === 'review' && activeWordbookId) {
-      await markWordResult(activeWordbookId, q.word.id, correct);
-    }
-
     if (currentIdx + 1 >= questions.length) {
       setRecords(newRecords);
       setMode('result');
+      const finalCorrect = newRecords.filter((r) => r.correct).length;
+      const finalScore = Math.round((finalCorrect / newRecords.length) * 100);
+      // 날짜별 테스트 점수(맞춘 개수) 저장
+      const today = new Date().toISOString().split('T')[0];
+      saveStudyPlanScore(today, finalCorrect).catch(() => {});
+      // 그룹 테스트 점수 기록
+      const u = auth.currentUser;
+      if (u) {
+        updateTestScore(u.uid, u.displayName ?? '사용자', u.photoURL ?? '', finalScore).catch(() => {});
+      }
     } else {
       setRecords(newRecords);
       setCurrentIdx(currentIdx + 1);
@@ -116,32 +125,20 @@ export default function TestScreen() {
           <Text style={styles.pageTitle}>테스트</Text>
           <Text style={styles.pageSub}>어떤 테스트를 시작할까요?</Text>
 
-          <TouchableOpacity style={styles.modeCard} onPress={startQuick}>
-            <Text style={styles.modeEmoji}>⚡</Text>
+          <TouchableOpacity style={styles.modeCard} onPress={startTodayTest}>
+            <Text style={styles.modeEmoji}>📅</Text>
             <View style={styles.modeTextWrap}>
-              <Text style={styles.modeTitle}>퀵 테스트</Text>
-              <Text style={styles.modeSub}>5문항 · 학습한 단어 중 랜덤 출제</Text>
+              <Text style={styles.modeTitle}>오늘 단어 테스트</Text>
+              <Text style={styles.modeSub}>오늘 학습한 단어만 출제</Text>
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.modeCard, reviewCount === 0 && styles.modeCardDisabled]}
-            onPress={reviewCount > 0 ? startReview : undefined}
-          >
-            <Text style={styles.modeEmoji}>🔁</Text>
+          <TouchableOpacity style={styles.modeCard} onPress={startAllLearnedTest}>
+            <Text style={styles.modeEmoji}>📚</Text>
             <View style={styles.modeTextWrap}>
-              <Text style={styles.modeTitle}>복습 테스트</Text>
-              <Text style={styles.modeSub}>
-                {reviewCount > 0
-                  ? `오늘 복습할 단어 ${reviewCount}개`
-                  : '오늘 복습할 단어가 없어요'}
-              </Text>
+              <Text style={styles.modeTitle}>지금까지 암기단어 테스트</Text>
+              <Text style={styles.modeSub}>완료된 단어 전체 출제</Text>
             </View>
-            {reviewCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{reviewCount}</Text>
-              </View>
-            )}
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -174,7 +171,7 @@ export default function TestScreen() {
           />
         </View>
 
-        <ScrollView contentContainerStyle={styles.quizBody}>
+        <ScrollView contentContainerStyle={styles.quizBody} contentInsetAdjustmentBehavior="automatic">
           {/* 문제 박스 */}
           <View style={styles.questionBox}>
             <Text style={styles.questionLabel}>다음 단어의 뜻은?</Text>
@@ -266,7 +263,7 @@ export default function TestScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.resultWrap}>
+      <ScrollView contentContainerStyle={styles.resultWrap} contentInsetAdjustmentBehavior="automatic">
         <Text style={styles.resultEmoji}>{resultEmoji}</Text>
         <Text style={styles.resultScore}>{correctCount} / {total}</Text>
         <Text style={styles.resultPercent}>{scorePercent}점</Text>
@@ -327,7 +324,6 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 3,
   },
-  modeCardDisabled: { opacity: 0.45 },
   modeEmoji: { fontSize: 32, marginRight: spacing.lg },
   modeTextWrap: { flex: 1 },
   modeTitle: {
@@ -337,17 +333,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   modeSub: { fontSize: fontSize.caption, color: colors.paper[500] },
-  badge: {
-    backgroundColor: colors.terra[500],
-    borderRadius: radius.sm,
-    minWidth: 22,
-    height: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xs,
-  },
-  badgeText: { color: colors.paper.white, fontSize: fontSize.label, fontWeight: fontWeight.bold },
-
   // ── 퀴즈 화면
   quizHeader: {
     flexDirection: 'row',

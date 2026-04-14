@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,20 +6,26 @@ import {
   SafeAreaView,
   TouchableOpacity,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
-import { getSettings } from '../../src/storage';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { getSettings, getStudyPlan } from '../../src/storage';
 import { getActiveWordbook, getProgress, markWordResult } from '../../src/storage/wordbookStorage';
+import { setTodayTestIntent } from '../../src/studyIntent';
 import { WordbookWord, toWord } from '../../src/types/wordbook';
 import WordCard from '../../components/WordCard';
 import { colors, fontSize, fontWeight, spacing, radius, lineHeight } from '../../src/theme';
+import { auth } from '../../src/firebase/config';
+import { updateStudyActivity } from '../../src/firebase/groupStorage';
 
 export default function StudyScreen() {
+  const router = useRouter();
   const [dailyGoal, setDailyGoal] = useState(10);
   const [queue, setQueue] = useState<WordbookWord[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [doneCount, setDoneCount] = useState(0);
   const [finished, setFinished] = useState(false);
+  const [isReviewMode, setIsReviewMode] = useState(false);
   const [activeWordbookId, setActiveWordbookId] = useState<string | null>(null);
+  const sessionStartRef = useRef<number>(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -28,8 +34,10 @@ export default function StudyScreen() {
   );
 
   async function loadSession() {
-    const settings = await getSettings();
-    setDailyGoal(settings.dailyGoal);
+    setIsReviewMode(false);
+    const [settings, studyPlan] = await Promise.all([getSettings(), getStudyPlan()]);
+    const goal = studyPlan?.dailyGoal ?? settings.dailyGoal;
+    setDailyGoal(goal);
 
     const book = await getActiveWordbook();
     if (!book) {
@@ -41,17 +49,31 @@ export default function StudyScreen() {
     const progress = await getProgress(book.id);
     const today = new Date().toISOString().split('T')[0];
 
-    const notYetToday = book.words.filter((w) => {
-      const e = progress.ebbinghausData[w.id];
-      return !e || e.lastStudiedAt !== today;
-    });
+    // 오늘 이미 학습한 단어 수
+    const alreadyTodayCount = Object.values(progress.ebbinghausData)
+      .filter((e) => e.lastStudiedAt === today).length;
 
-    const todayQueue = notYetToday.slice(0, settings.dailyGoal);
+    // 오늘 목표를 이미 채웠으면 완료
+    if (alreadyTodayCount >= goal) {
+      setDoneCount(goal);
+      setQueue([]);
+      setFinished(true);
+      return;
+    }
 
-    setQueue(todayQueue);
+    // 아직 한 번도 배우지 않은 단어들 (처음 학습 대상)
+    const neverLearned = book.words.filter(
+      (w) => !progress.ebbinghausData[w.id]?.learned
+    );
+
+    // 오늘 남은 슬롯만큼만 할당 (항상 같은 단어 세트 유지)
+    const remaining = neverLearned.slice(0, goal - alreadyTodayCount);
+
+    setQueue(remaining);
     setCurrentIndex(0);
-    setDoneCount(0);
-    setFinished(todayQueue.length === 0);
+    setDoneCount(alreadyTodayCount);
+    setFinished(remaining.length === 0);
+    sessionStartRef.current = Date.now();
   }
 
   async function markWord(correct: boolean) {
@@ -60,12 +82,38 @@ export default function StudyScreen() {
     await markWordResult(activeWordbookId, word.id, correct);
 
     const next = currentIndex + 1;
+    const newDone = doneCount + 1;
+
     if (next >= queue.length) {
+      // 세션 완료 → 그룹 활동 기록 (최초 학습 세션만)
+      if (!isReviewMode) {
+        const u = auth.currentUser;
+        if (u && newDone > 0) {
+          const elapsedMins = Math.max(1, Math.round((Date.now() - sessionStartRef.current) / 60000));
+          updateStudyActivity(u.uid, u.displayName ?? '사용자', u.photoURL ?? '', newDone, elapsedMins).catch(() => {});
+        }
+      }
       setFinished(true);
     } else {
       setCurrentIndex(next);
     }
-    setDoneCount((c) => c + 1);
+    setDoneCount(newDone);
+  }
+
+  async function startReview() {
+    const book = await getActiveWordbook();
+    if (!book) return;
+    const progress = await getProgress(book.id);
+    const today = new Date().toISOString().split('T')[0];
+    const todayWords = book.words.filter(
+      (w) => progress.ebbinghausData[w.id]?.lastStudiedAt === today
+    );
+    setQueue(todayWords);
+    setCurrentIndex(0);
+    setDoneCount(0);
+    setIsReviewMode(true);
+    setFinished(todayWords.length === 0);
+    sessionStartRef.current = Date.now();
   }
 
   // ── 완료 화면 ─────────────────────────────────────
@@ -73,20 +121,37 @@ export default function StudyScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.center}>
-          <Text style={styles.bigEmoji}>{queue.length === 0 ? '🎉' : '✨'}</Text>
+          <Text style={styles.bigEmoji}>{isReviewMode ? '✅' : '🎉'}</Text>
           <Text style={styles.doneTitle}>
-            {queue.length === 0 ? '오늘 학습 완료!' : '세션 완료!'}
+            {isReviewMode ? '복습 완료!' : '오늘 학습 완료!'}
           </Text>
           <Text style={styles.doneSub}>
-            {queue.length === 0
-              ? `오늘 목표 ${dailyGoal}개를 모두 학습했어요.\n내일 또 만나요!`
-              : `${doneCount}개 단어를 학습했어요.\n테스트로 실력을 확인해봐요!`}
+            {isReviewMode
+              ? '오늘 학습한 단어를 다시 살펴봤어요!'
+              : `오늘 목표 ${dailyGoal}개를 모두 학습했어요.\n테스트로 실력을 확인해봐요!`}
           </Text>
-          {queue.length > 0 && (
-            <TouchableOpacity style={styles.retryBtn} onPress={loadSession}>
-              <Text style={styles.retryBtnText}>다시 학습하기</Text>
+          <View style={styles.doneActions}>
+            <TouchableOpacity
+              style={styles.testBtn}
+              onPress={() => {
+                setTodayTestIntent();
+                router.push('/(tabs)/test');
+              }}
+            >
+              <Text style={styles.testBtnText}>테스트하기</Text>
             </TouchableOpacity>
-          )}
+            {!isReviewMode && (
+              <TouchableOpacity style={styles.reviewBtn} onPress={startReview}>
+                <Text style={styles.reviewBtnText}>복습하기</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={styles.homeBtn}
+              onPress={() => router.push('/(tabs)')}
+            >
+              <Text style={styles.homeBtnText}>홈으로</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -94,22 +159,7 @@ export default function StudyScreen() {
 
   const currentWord = queue[currentIndex];
 
-  if (!currentWord || queue.length === 0) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.center}>
-          <Text style={styles.bigEmoji}>🎉</Text>
-          <Text style={styles.doneTitle}>오늘 학습 완료!</Text>
-          <Text style={styles.doneSub}>
-            오늘 목표 {dailyGoal}개를 모두 학습했어요.\n내일 또 만나요!
-          </Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={loadSession}>
-            <Text style={styles.retryBtnText}>다시 학습하기</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  if (!currentWord) return null;
 
   const progress = (currentIndex + 1) / queue.length;
 
@@ -282,16 +332,46 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: fontSize.body * lineHeight.relaxed,
   },
-  retryBtn: {
+  doneActions: {
     marginTop: spacing['2xl'],
+    gap: spacing.md,
+    width: '100%',
+  },
+  homeBtn: {
+    backgroundColor: colors.paper.white,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.paper[200],
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  homeBtnText: {
+    color: colors.paper[600],
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.medium,
+  },
+  testBtn: {
     backgroundColor: colors.sage[600],
     borderRadius: radius.lg,
     paddingVertical: 14,
-    paddingHorizontal: spacing['2xl'],
+    alignItems: 'center',
   },
-  retryBtnText: {
+  testBtnText: {
     color: colors.paper.white,
     fontSize: fontSize.body,
-    fontWeight: fontWeight.medium,
+    fontWeight: fontWeight.semibold,
+  },
+  reviewBtn: {
+    backgroundColor: colors.paper.white,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.sage[300],
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  reviewBtnText: {
+    color: colors.sage[600],
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.semibold,
   },
 });
