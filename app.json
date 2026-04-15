@@ -28,7 +28,8 @@
         "backgroundColor": "#FFFFFF"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.peteryoo153.wordmemo"
     },
     "web": {
       "output": "static",
