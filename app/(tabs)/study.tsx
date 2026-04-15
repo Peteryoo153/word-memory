@@ -5,10 +5,14 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
+  Modal,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { getSettings, getStudyPlan } from '../../src/storage';
-import { getActiveWordbook, getProgress, markWordResult } from '../../src/storage/wordbookStorage';
+import {
+  getActiveWordbook, getProgress, markWordResult,
+  markCompleted, resetForReview,
+} from '../../src/storage/wordbookStorage';
 import { setTodayTestIntent } from '../../src/studyIntent';
 import { WordbookWord, toWord } from '../../src/types/wordbook';
 import WordCard from '../../components/WordCard';
@@ -27,6 +31,9 @@ export default function StudyScreen() {
   const [finished, setFinished] = useState(false);
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [activeWordbookId, setActiveWordbookId] = useState<string | null>(null);
+  const [totalWordsInBook, setTotalWordsInBook] = useState(0);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [completionCount, setCompletionCount] = useState(0);
   const sessionStartRef = useRef<number>(0);
 
   useFocusEffect(
@@ -47,6 +54,7 @@ export default function StudyScreen() {
       return;
     }
     setActiveWordbookId(book.id);
+    setTotalWordsInBook(book.totalWords);
 
     const progress = await getProgress(book.id);
     const today = new Date().toISOString().split('T')[0];
@@ -85,6 +93,18 @@ export default function StudyScreen() {
 
     const next = currentIndex + 1;
     const newDone = doneCount + 1;
+    setDoneCount(newDone);
+
+    // 단어장 전체 완료 체크 (복습 모드 제외)
+    if (!isReviewMode && totalWordsInBook > 0) {
+      const updated = await getProgress(activeWordbookId);
+      if (!updated.isCompleted && updated.learnedWordIds.length >= totalWordsInBook) {
+        const completed = await markCompleted(activeWordbookId);
+        setCompletionCount(completed.completedCount);
+        setShowCompletionModal(true);
+        return;
+      }
+    }
 
     if (next >= queue.length) {
       // 세션 완료 → 그룹 활동 기록 (최초 학습 세션만)
@@ -99,7 +119,6 @@ export default function StudyScreen() {
     } else {
       setCurrentIndex(next);
     }
-    setDoneCount(newDone);
   }
 
   async function startReview() {
@@ -116,6 +135,13 @@ export default function StudyScreen() {
     setIsReviewMode(true);
     setFinished(todayWords.length === 0);
     sessionStartRef.current = Date.now();
+  }
+
+  async function handleCompletionReview() {
+    if (!activeWordbookId) return;
+    setShowCompletionModal(false);
+    await resetForReview(activeWordbookId);
+    await loadSession();
   }
 
   // ── 완료 화면 ─────────────────────────────────────
@@ -167,6 +193,32 @@ export default function StudyScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Modal
+        visible={showCompletionModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => { setShowCompletionModal(false); setFinished(true); }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalEmoji}>🎉</Text>
+            <Text style={styles.modalTitle}>단어장을 모두 학습했어요!</Text>
+            <Text style={styles.modalSub}>{completionCount}회째 완주했어요</Text>
+            <TouchableOpacity
+              style={styles.modalPrimaryBtn}
+              onPress={handleCompletionReview}
+            >
+              <Text style={styles.modalPrimaryBtnText}>바로 복습 시작</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modalSecondaryBtn}
+              onPress={() => { setShowCompletionModal(false); setFinished(true); }}
+            >
+              <Text style={styles.modalSecondaryBtnText}>확인</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
       {/* 헤더 */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>오늘의 학습</Text>
@@ -310,6 +362,67 @@ function makeStyles(colors: ColorPalette) {
     color: colors.paper[300],
     paddingBottom: spacing.lg,
     paddingTop: spacing.sm,
+  },
+
+  // 완료 모달
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 13, 26, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+  },
+  modalBox: {
+    backgroundColor: colors.paper.white,
+    borderRadius: radius['2xl'],
+    padding: spacing['2xl'],
+    width: '100%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  modalEmoji: {
+    fontSize: 56,
+    marginBottom: spacing.md,
+  },
+  modalTitle: {
+    fontSize: fontSize.h2,
+    fontWeight: fontWeight.bold,
+    color: colors.paper[900],
+    textAlign: 'center',
+    marginBottom: spacing.xs,
+  },
+  modalSub: {
+    fontSize: fontSize.body,
+    color: colors.paper[500],
+    marginBottom: spacing['2xl'],
+  },
+  modalPrimaryBtn: {
+    backgroundColor: colors.sage[600],
+    borderRadius: radius.lg,
+    paddingVertical: 14,
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  modalPrimaryBtnText: {
+    color: colors.paper.white,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.semibold,
+  },
+  modalSecondaryBtn: {
+    borderRadius: radius.lg,
+    paddingVertical: 14,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalSecondaryBtnText: {
+    color: colors.paper[500],
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.medium,
   },
 
   // 완료 화면

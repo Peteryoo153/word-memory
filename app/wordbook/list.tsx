@@ -1,15 +1,24 @@
 import { useCallback, useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView,
-  TouchableOpacity, ScrollView, StatusBar,
+  TouchableOpacity, ScrollView, StatusBar, Alert,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
   getAllWordbooks, getActiveWordbookId, getProgress, getTodayLearnedCount,
+  resetForReview, switchActiveWordbook,
 } from '../../src/storage/wordbookStorage';
 import { Wordbook, WordbookProgress } from '../../src/types/wordbook';
 import { fontSize, fontWeight, spacing, radius, lineHeight, letterSpacing, useColors, ColorPalette } from '../../src/theme';
+
+function getGradeInfo(completedCount: number): { label: string; colorKey: 'sage' | 'terra'; shade: 600 | 500 | 700 } | null {
+  if (completedCount <= 0) return null;
+  if (completedCount >= 10) return { label: '🏆전설', colorKey: 'terra', shade: 700 };
+  if (completedCount >= 5)  return { label: '🏆마스터', colorKey: 'terra', shade: 500 };
+  if (completedCount >= 3)  return { label: '✓★', colorKey: 'sage', shade: 600 };
+  return { label: '✓', colorKey: 'sage', shade: 600 };
+}
 
 interface BookWithMeta {
   book: Wordbook;
@@ -54,6 +63,25 @@ export default function WordbookListScreen() {
 
     setItems(withMeta);
     setLoading(false);
+  }
+
+  async function handleReview(bookId: string, bookName: string) {
+    Alert.alert(
+      '처음부터 복습',
+      `'${bookName}'의 모든 학습 기록을 초기화하고 처음부터 다시 시작할까요?\n완료 횟수는 유지돼요.`,
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '복습 시작',
+          style: 'destructive',
+          onPress: async () => {
+            await resetForReview(bookId);
+            await switchActiveWordbook(bookId);
+            await loadData();
+          },
+        },
+      ],
+    );
   }
 
   function formatLastStudied(dateStr: string): string {
@@ -112,6 +140,12 @@ export default function WordbookListScreen() {
               ? learnedCount / book.totalWords
               : 0;
             const progressPct = Math.round(progressRatio * 100);
+            const completedCount = progress.completedCount ?? 0;
+            const isCompleted = progress.isCompleted ?? false;
+            const grade = getGradeInfo(completedCount);
+            const gradeColor = grade
+              ? colors[grade.colorKey][grade.shade]
+              : undefined;
 
             return (
               <TouchableOpacity
@@ -120,13 +154,18 @@ export default function WordbookListScreen() {
                 onPress={() => router.push(`/wordbook/${book.id}`)}
                 activeOpacity={0.8}
               >
-                {/* 상단 행: 이름 + 뱃지 */}
+                {/* 상단 행: 이름 + 뱃지들 */}
                 <View style={styles.cardTop}>
                   <View style={styles.cardTitleRow}>
                     <Text style={styles.cardName} numberOfLines={1}>{book.name}</Text>
                     {isActive && (
                       <View style={styles.activeBadge}>
                         <Text style={styles.activeBadgeText}>학습 중</Text>
+                      </View>
+                    )}
+                    {grade && (
+                      <View style={[styles.gradeBadge, { borderColor: gradeColor }]}>
+                        <Text style={[styles.gradeBadgeText, { color: gradeColor }]}>{grade.label}</Text>
                       </View>
                     )}
                   </View>
@@ -152,23 +191,36 @@ export default function WordbookListScreen() {
                       styles.progressBarFill,
                       { width: `${progressPct}%` },
                       isActive && styles.progressBarActive,
+                      isCompleted && styles.progressBarCompleted,
                     ]}
                   />
                 </View>
 
-                {/* 하단: 마지막 학습일 */}
-                <Text style={styles.lastStudied}>
-                  마지막 학습: {formatLastStudied(progress.lastStudiedAt)}
-                </Text>
+                {/* 하단: 마지막 학습일 + 복습 버튼 */}
+                <View style={styles.cardBottom}>
+                  <Text style={styles.lastStudied}>
+                    마지막 학습: {formatLastStudied(progress.lastStudiedAt)}
+                  </Text>
+                  {isCompleted && (
+                    <TouchableOpacity
+                      style={styles.reviewBtn}
+                      onPress={(e) => { e.stopPropagation(); handleReview(book.id, book.name); }}
+                    >
+                      <Text style={styles.reviewBtnText}>처음부터 복습</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
 
                 {/* 활성 단어장 오른쪽 화살표 */}
-                <View style={styles.chevron}>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={isActive ? colors.sage[400] : colors.paper[300]}
-                  />
-                </View>
+                {!isCompleted && (
+                  <View style={styles.chevron}>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color={isActive ? colors.sage[400] : colors.paper[300]}
+                    />
+                  </View>
+                )}
               </TouchableOpacity>
             );
           })
@@ -312,9 +364,47 @@ function makeStyles(colors: ColorPalette) {
     backgroundColor: colors.sage[600],
   },
 
+  cardBottom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.xs,
+  },
   lastStudied: {
     fontSize: fontSize.caption - 1,
     color: colors.paper[400],
+  },
+
+  // 등급 뱃지
+  gradeBadge: {
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    paddingHorizontal: spacing.xs + 2,
+    paddingVertical: 2,
+  },
+  gradeBadgeText: {
+    fontSize: fontSize.label,
+    fontWeight: fontWeight.semibold,
+  },
+
+  // 진행 바 — 완료 상태
+  progressBarCompleted: {
+    backgroundColor: colors.sage[500],
+  },
+
+  // 복습 버튼
+  reviewBtn: {
+    backgroundColor: colors.sage[50],
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.sage[300],
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 1,
+  },
+  reviewBtnText: {
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.medium,
+    color: colors.sage[600],
   },
 
   chevron: {

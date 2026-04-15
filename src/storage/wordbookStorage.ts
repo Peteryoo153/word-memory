@@ -104,6 +104,8 @@ export function makeEmptyProgress(wordbookId: string): WordbookProgress {
     lastStudiedAt: '',
     totalStudyDays: 0,
     ebbinghausData: {},
+    completedCount: 0,
+    isCompleted: false,
   };
 }
 
@@ -172,6 +174,27 @@ export async function markWordResult(
     progress.learnedWordIds.push(wordId);
   }
 
+  await saveProgress(progress);
+}
+
+/** 단어장 전체 완료 처리 — completedCount 증가, isCompleted = true */
+export async function markCompleted(wordbookId: string): Promise<WordbookProgress> {
+  const progress = await getProgress(wordbookId);
+  progress.completedCount = (progress.completedCount ?? 0) + 1;
+  progress.isCompleted = true;
+  progress.lastCompletedAt = new Date().toISOString().split('T')[0];
+  await saveProgress(progress);
+  return progress;
+}
+
+/** 복습을 위해 진도 초기화 — completedCount·lastCompletedAt은 보존 */
+export async function resetForReview(wordbookId: string): Promise<void> {
+  const progress = await getProgress(wordbookId);
+  progress.learnedWordIds = [];
+  progress.wrongWordIds = [];
+  progress.currentIndex = 0;
+  progress.isCompleted = false;
+  progress.ebbinghausData = {};
   await saveProgress(progress);
 }
 

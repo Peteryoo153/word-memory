@@ -43,6 +43,9 @@ export interface WordbookProgress {
   lastStudiedAt: string;
   totalStudyDays: number;
   ebbinghausData: Record<string, EbbinghausEntry>;  // wordId → 진도
+  completedCount: number;     // 단어장 전체 완료 횟수
+  isCompleted: boolean;       // 현재 회차 완료 여부
+  lastCompletedAt?: string;   // 마지막 완료 날짜 (ISO 날짜 문자열)
 }
 
 // WordbookWord → 기존 Word 변환 (WordCard 등 기존 컴포넌트용)
