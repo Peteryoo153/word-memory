@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { Word } from '../src/types';
 import { speakWord, speakSentence } from '../src/tts';
-import { colors, fontSize, fontWeight, fontFamily, spacing, radius, lineHeight, letterSpacing } from '../src/theme';
+import { fontSize, fontWeight, fontFamily, spacing, radius, lineHeight, letterSpacing, useColors, ColorPalette } from '../src/theme';
 import { Label, ExampleBox } from '../src/components/ui';
 
 const { width } = Dimensions.get('window');
@@ -37,6 +37,8 @@ const partLabel: Record<string, string> = {
 };
 
 export default function WordCard({ word, index, total }: Props) {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [flipped, setFlipped] = useState(false);
   const rotate = useSharedValue(0);
 
@@ -177,7 +179,8 @@ export default function WordCard({ word, index, total }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ColorPalette) {
+  return StyleSheet.create({
   cardWrapper: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
@@ -383,4 +386,5 @@ const styles = StyleSheet.create({
     fontSize: fontSize.caption,
     fontWeight: fontWeight.semibold,
   },
-});
+  });
+}

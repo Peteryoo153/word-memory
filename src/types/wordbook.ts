@@ -17,7 +17,7 @@ export interface Wordbook {
   id: string;
   name: string;
   description?: string;
-  source: 'builtin' | 'pdf' | 'custom' | 'shared';
+  source: 'builtin' | 'custom' | 'shared';
   totalWords: number;
   createdAt: string;
   words: WordbookWord[];

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView,
   TouchableOpacity, ScrollView, StatusBar, Alert,
@@ -10,9 +10,11 @@ import {
 } from '../../src/storage/wordbookStorage';
 import { ALL_BUILTIN_WORDBOOKS } from '../../src/data/builtinWordbooks';
 import { Wordbook } from '../../src/types/wordbook';
-import { colors, fontSize, fontWeight, spacing, radius, lineHeight } from '../../src/theme';
+import { fontSize, fontWeight, spacing, radius, lineHeight, useColors, ColorPalette } from '../../src/theme';
 
 export default function AddWordbookScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const [ownedIds, setOwnedIds] = useState<Set<string>>(new Set());
   const [adding, setAdding] = useState<string | null>(null);
@@ -48,7 +50,7 @@ export default function AddWordbookScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={colors.statusBarStyle} />
 
       {/* 헤더 */}
       <View style={styles.header}>
@@ -111,8 +113,8 @@ export default function AddWordbookScreen() {
           <Ionicons name="construct-outline" size={32} color={colors.paper[300]} />
           <Text style={styles.customTitle}>준비 중이에요</Text>
           <Text style={styles.customDesc}>
-            직접 단어를 입력하거나{'\n'}
-            PDF로 단어장을 만드는 기능을 준비 중이에요
+            직접 단어를 입력해서{'\n'}
+            나만의 단어장을 만드는 기능을 준비 중이에요
           </Text>
         </View>
       </ScrollView>
@@ -120,7 +122,8 @@ export default function AddWordbookScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ColorPalette) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.paper.bg },
 
   header: {
@@ -244,4 +247,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: fontSize.caption * lineHeight.relaxed,
   },
-});
+  });
+}

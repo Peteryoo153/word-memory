@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,11 +12,13 @@ import { getActiveWordbook, getProgress, markWordResult } from '../../src/storag
 import { setTodayTestIntent } from '../../src/studyIntent';
 import { WordbookWord, toWord } from '../../src/types/wordbook';
 import WordCard from '../../components/WordCard';
-import { colors, fontSize, fontWeight, spacing, radius, lineHeight } from '../../src/theme';
+import { fontSize, fontWeight, spacing, radius, lineHeight, useColors, ColorPalette } from '../../src/theme';
 import { auth } from '../../src/firebase/config';
 import { updateStudyActivity } from '../../src/firebase/groupStorage';
 
 export default function StudyScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const [dailyGoal, setDailyGoal] = useState(10);
   const [queue, setQueue] = useState<WordbookWord[]>([]);
@@ -210,7 +212,8 @@ export default function StudyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ColorPalette) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.paper.bg,
@@ -374,4 +377,5 @@ const styles = StyleSheet.create({
     fontSize: fontSize.body,
     fontWeight: fontWeight.semibold,
   },
-});
+  });
+}

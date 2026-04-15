@@ -49,7 +49,13 @@
           }
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "color": "#2952CC"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

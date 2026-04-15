@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView,
   TouchableOpacity, ScrollView,
@@ -12,7 +12,7 @@ import { toWord } from '../../src/types/wordbook';
 import { buildQuiz, QuizQuestion } from '../../src/quiz';
 import { Word } from '../../src/types';
 import { speakWord } from '../../src/tts';
-import { colors, fontSize, fontWeight, fontFamily, spacing, radius, lineHeight, letterSpacing } from '../../src/theme';
+import { fontSize, fontWeight, fontFamily, spacing, radius, lineHeight, letterSpacing, useColors, ColorPalette } from '../../src/theme';
 import { auth } from '../../src/firebase/config';
 import { updateTestScore } from '../../src/firebase/groupStorage';
 
@@ -26,6 +26,8 @@ interface AnswerRecord {
 }
 
 export default function TestScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [mode, setMode] = useState<Mode>('select');
   const [testType, setTestType] = useState<TestType>('today');
   const [activeWordbookId, setActiveWordbookId] = useState<string | null>(null);
@@ -289,7 +291,8 @@ export default function TestScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ColorPalette) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.paper.bg },
 
   // ── 선택 화면
@@ -493,4 +496,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing['2xl'],
   },
   retryBtnText: { color: colors.paper.white, fontSize: fontSize.bodySmall, fontWeight: fontWeight.medium },
-});
+  });
+}

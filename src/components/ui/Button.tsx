@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -5,7 +6,7 @@ import {
   ViewStyle,
   ActivityIndicator,
 } from 'react-native';
-import { colors, radius, fontSize, fontWeight } from '../../theme';
+import { radius, fontSize, fontWeight, useColors, ColorPalette } from '../../theme';
 
 type Variant = 'primary' | 'secondary' | 'danger';
 
@@ -26,6 +27,8 @@ export function Button({
   disabled,
   loading,
 }: Props) {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <TouchableOpacity
       style={[styles.base, styles[variant], (disabled || loading) && styles.disabled, style]}
@@ -42,41 +45,43 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: radius.lg,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primary: {
-    backgroundColor: colors.sage[600],
-  },
-  secondary: {
-    backgroundColor: 'transparent',
-    borderWidth: 0.5,
-    borderColor: colors.paper[300],
-  },
-  danger: {
-    backgroundColor: colors.terra[100],
-    borderWidth: 0.5,
-    borderColor: colors.terra[200],
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  label: {
-    fontSize: fontSize.bodySmall,
-    fontWeight: fontWeight.medium,
-  },
-  primaryLabel: {
-    color: colors.paper.white,
-  },
-  secondaryLabel: {
-    color: colors.paper[600],
-  },
-  dangerLabel: {
-    color: colors.semantic.error,
-  },
-});
+function makeStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    base: {
+      borderRadius: radius.lg,
+      paddingVertical: 14,
+      paddingHorizontal: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    primary: {
+      backgroundColor: colors.sage[600],
+    },
+    secondary: {
+      backgroundColor: 'transparent',
+      borderWidth: 0.5,
+      borderColor: colors.paper[300],
+    },
+    danger: {
+      backgroundColor: colors.terra[100],
+      borderWidth: 0.5,
+      borderColor: colors.terra[200],
+    },
+    disabled: {
+      opacity: 0.5,
+    },
+    label: {
+      fontSize: fontSize.bodySmall,
+      fontWeight: fontWeight.medium,
+    },
+    primaryLabel: {
+      color: colors.paper.white,
+    },
+    secondaryLabel: {
+      color: colors.paper[600],
+    },
+    dangerLabel: {
+      color: colors.semantic.error,
+    },
+  });
+}

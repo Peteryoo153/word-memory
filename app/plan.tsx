@@ -1,15 +1,16 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   SafeAreaView, StatusBar, TextInput, Alert,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, fontSize, fontWeight, spacing, radius } from '../src/theme';
+import { fontSize, fontWeight, spacing, radius, useColors, ColorPalette } from '../src/theme';
 import { getStudyPlan, saveStudyPlan, saveSettings, deleteStudyPlan } from '../src/storage';
 import { StudyPlan, StudyLevel } from '../src/types';
 import { getAllWordbooks, resetAllProgress } from '../src/storage/wordbookStorage';
 import { Wordbook } from '../src/types/wordbook';
+import { scheduleStudyReminders, cancelStudyReminders } from '../src/notifications';
 
 // ── 상수 ──────────────────────────────────────────────
 const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
@@ -43,6 +44,8 @@ interface DrumPickerProps {
 }
 
 function DrumPicker({ values, selected, onSelect, format, width = 100 }: DrumPickerProps) {
+  const colors = useColors();
+  const drum = useMemo(() => makeDrumStyles(colors), [colors]);
   const scrollRef = useRef<ScrollView>(null);
   const idx = values.indexOf(selected);
   const fmt = format ?? ((v: number) => `${v}`);
@@ -75,7 +78,8 @@ function DrumPicker({ values, selected, onSelect, format, width = 100 }: DrumPic
   );
 }
 
-const drum = StyleSheet.create({
+function makeDrumStyles(colors: ColorPalette) {
+  return StyleSheet.create({
   wrap: { height: ITEM_H * 5, overflow: 'hidden', position: 'relative' },
   indicator: {
     position: 'absolute',
@@ -86,10 +90,13 @@ const drum = StyleSheet.create({
   item: { height: ITEM_H, justifyContent: 'center', alignItems: 'center' },
   text:         { fontSize: 20, color: colors.paper[300], fontWeight: '400' },
   textSelected: { color: colors.paper[900], fontWeight: '700', fontSize: 22 },
-});
+  });
+}
 
 // ── 메인 화면 ─────────────────────────────────────────
 export default function PlanScreen() {
+  const colors = useColors();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
 
   const [wordbooks, setWordbooks]           = useState<Wordbook[]>([]);
@@ -186,6 +193,7 @@ export default function PlanScreen() {
               deleteStudyPlan(),
               resetAllProgress(),
               saveSettings({ dailyGoal: 10 }),
+              cancelStudyReminders(),
             ]);
             router.back();
           },
@@ -212,6 +220,19 @@ export default function PlanScreen() {
       saveStudyPlan(plan),
       saveSettings({ dailyGoal }),   // 홈 진행바에 자동 반영
     ]);
+
+    if (plan.alarmEnabled) {
+      const ok = await scheduleStudyReminders(plan);
+      if (!ok) {
+        Alert.alert(
+          '알림 권한이 필요해요',
+          '플랜은 저장됐지만 알림은 울리지 않아요.\n설정에서 알림 권한을 켜주세요.',
+        );
+      }
+    } else {
+      await cancelStudyReminders();
+    }
+
     router.back();
   }
 
@@ -229,7 +250,7 @@ export default function PlanScreen() {
 
   return (
     <SafeAreaView style={s.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={colors.statusBarStyle} />
 
       {/* 헤더 */}
       <View style={s.header}>
@@ -480,7 +501,8 @@ export default function PlanScreen() {
 }
 
 // ── 스타일 ────────────────────────────────────────────
-const s = StyleSheet.create({
+function makeStyles(colors: ColorPalette) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.paper.bg },
 
   header: {
@@ -777,4 +799,5 @@ const s = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     color: colors.terra[500],
   },
-});
+  });
+}

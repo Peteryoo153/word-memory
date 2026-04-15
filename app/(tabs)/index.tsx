@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
 } from 'react-native';
@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getSettings, getStudyPlan } from '../../src/storage';
 import { StudyPlan } from '../../src/types';
 import { getActiveWordbook, getProgress, getTodayLearnedCount, getDueWordIds } from '../../src/storage/wordbookStorage';
-import { colors, fontSize, fontWeight, fontFamily, spacing, radius } from '../../src/theme';
+import { fontSize, fontWeight, fontFamily, spacing, radius, useColors, ColorPalette } from '../../src/theme';
 
 const DAY_LABELS: Record<string, string> = {
   mon: '월', tue: '화', wed: '수', thu: '목', fri: '금', sat: '토', sun: '일',
@@ -37,6 +37,8 @@ function getThisWeekDates(): Record<string, string> {
 const THIS_WEEK_DATES = getThisWeekDates();
 
 export default function HomeScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const [dailyGoal, setDailyGoal]             = useState(10);
   const [learnedCount, setLearnedCount]       = useState(0);
@@ -267,7 +269,8 @@ export default function HomeScreen() {
 
 const CARD_RADIUS = radius.xl; // 24 — 모든 카드/버튼 통일
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ColorPalette) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.paper.bg,
@@ -560,4 +563,5 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.medium,
   },
 
-});
+  });
+}

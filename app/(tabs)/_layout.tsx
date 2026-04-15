@@ -1,9 +1,10 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, fontSize, fontWeight } from '../../src/theme';
+import { fontSize, fontWeight, useColors } from '../../src/theme';
 
 export default function TabLayout() {
+  const colors = useColors();
   const insets = useSafeAreaInsets();
   const bottomPad = Math.max(insets.bottom, 8);
 
@@ -89,10 +90,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: '프로필',
+          title: '설정',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
-              name={focused ? 'person' : 'person-outline'}
+              name={focused ? 'settings' : 'settings-outline'}
               size={size + 1}
               color={color}
             />

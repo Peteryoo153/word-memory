@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   TextInput, Alert, Share, ActivityIndicator,
@@ -14,13 +14,15 @@ import {
   subscribeGroupActivities,
 } from '../../src/firebase/groupStorage';
 import type { Group, GroupMember, GroupActivity } from '../../src/types/group';
-import { colors, fontSize, fontWeight, spacing, radius } from '../../src/theme';
+import { fontSize, fontWeight, spacing, radius, useColors, ColorPalette } from '../../src/theme';
 
 type FlowView = 'home' | 'create' | 'join';
 
 const CARD_R = radius.xl;
 
 export default function GroupScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { user, signInWithGoogle, signingIn } = useGoogleAuth();
 
   const [loading, setLoading]           = useState(true);
@@ -475,7 +477,8 @@ export default function GroupScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ColorPalette) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.paper.bg,
@@ -839,4 +842,5 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     color: colors.terra[600],
   },
-});
+  });
+}

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView,
   TouchableOpacity, ScrollView, StatusBar,
@@ -9,7 +9,7 @@ import {
   getAllWordbooks, getActiveWordbookId, getProgress, getTodayLearnedCount,
 } from '../../src/storage/wordbookStorage';
 import { Wordbook, WordbookProgress } from '../../src/types/wordbook';
-import { colors, fontSize, fontWeight, spacing, radius, lineHeight, letterSpacing } from '../../src/theme';
+import { fontSize, fontWeight, spacing, radius, lineHeight, letterSpacing, useColors, ColorPalette } from '../../src/theme';
 
 interface BookWithMeta {
   book: Wordbook;
@@ -20,6 +20,8 @@ interface BookWithMeta {
 }
 
 export default function WordbookListScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const [items, setItems] = useState<BookWithMeta[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,14 +69,13 @@ export default function WordbookListScreen() {
 
   const sourceLabel: Record<string, string> = {
     builtin: '내장',
-    pdf:     'PDF',
     custom:  '직접 만들기',
     shared:  '공유',
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={colors.statusBarStyle} />
 
       {/* 헤더 */}
       <View style={styles.header}>
@@ -177,7 +178,8 @@ export default function WordbookListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ColorPalette) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.paper.bg },
 
   header: {
@@ -339,4 +341,5 @@ const styles = StyleSheet.create({
     color: colors.paper[400],
     textAlign: 'center',
   },
-});
+  });
+}
