@@ -13,6 +13,13 @@ function StackNav() {
         contentStyle: { backgroundColor: colors.paper.bg },
       }}
     >
+      <Stack.Screen
+        name="intro"
+        options={{
+          animation: 'none',
+          gestureEnabled: false,
+        }}
+      />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen
         name="plan"

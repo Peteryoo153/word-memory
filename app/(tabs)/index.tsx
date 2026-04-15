@@ -97,7 +97,7 @@ export default function HomeScreen() {
         <View style={styles.headerText}>
           <Text style={styles.appTitle}>단어암기장</Text>
           <Text style={styles.greeting}>
-            {isDone ? '오늘 목표 완료! 🎉' : '오늘도 단어를 외워봐요'}
+            {isDone ? '오늘 목표 완료! 🎉' : '느려도 정직하게'}
           </Text>
         </View>
       </View>
