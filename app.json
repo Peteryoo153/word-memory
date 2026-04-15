@@ -16,10 +16,18 @@
         "CFBundleURLTypes": [
           {
             "CFBundleURLSchemes": [
-              "com.googleusercontent.apps.80364629052-foutf6riq3eo56qgm5f1bek34j9q2i4p"
+              "com.googleusercontent.apps.80364629052-foutf6riq3eo56qgm5f1bek34j9q2i4p",
+              "com.googleusercontent.apps.80364629052-n5g5hjt60nnptv6fskdks5oabpuub5sm"
+            ]
+          },
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.80364629052-foutf6riq3eo56qgm5f1bek34j9q2i4p",
+              "com.googleusercontent.apps.80364629052-n5g5hjt60nnptv6fskdks5oabpuub5sm"
             ]
           }
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -59,6 +67,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e5ca9d91-c53a-4d7c-8bbd-7a38ca713537"
+      }
     }
   }
 }

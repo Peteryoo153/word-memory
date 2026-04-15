@@ -30,7 +30,7 @@ const GOOGLE_CLIENT_IDS = {
   webClientId: '80364629052-u4vc4mq4rrukaj3dikmjitjuqrpcu50n.apps.googleusercontent.com',
   // Expo Go: host.exp.exponent 번들용 클라이언트 ID
   iosClientIdExpoGo: '80364629052-foutf6riq3eo56qgm5f1bek34j9q2i4p.apps.googleusercontent.com',
-  // Development Build / Production: com.wordmemo.app 번들용 클라이언트 ID
+  // Development Build / Production: com.peteryoo153.wordmemo 번들용 클라이언트 ID
   iosClientIdNative: '80364629052-n5g5hjt60nnptv6fskdks5oabpuub5sm.apps.googleusercontent.com',
 };
 
