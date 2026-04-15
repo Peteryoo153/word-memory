@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.wordmemo.app",
+      "bundleIdentifier": "com.peteryoo153.wordmemo",
       "infoPlist": {
         "CFBundleDisplayName": "단어암기장",
         "CFBundleURLTypes": [
