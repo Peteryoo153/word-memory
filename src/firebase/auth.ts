@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
-import { makeRedirectUri } from 'expo-auth-session';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import {
   GoogleAuthProvider,
@@ -39,12 +38,6 @@ const iosClientId = isExpoGo
   ? GOOGLE_CLIENT_IDS.iosClientIdExpoGo
   : GOOGLE_CLIENT_IDS.iosClientIdNative;
 
-// 현재 환경의 redirect URI를 미리 계산해 로그로 확인
-const redirectUri = makeRedirectUri({
-  scheme: 'wordmemo',
-  path: 'oauth2redirect',
-});
-
 // Google 로그인 전체 흐름을 관리하는 훅
 export function useGoogleAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -56,16 +49,6 @@ export function useGoogleAuth() {
     webClientId: GOOGLE_CLIENT_IDS.webClientId,
     iosClientId,
   });
-
-  // 실제 사용 중인 redirect URI 확인 (Google Console 등록용)
-  useEffect(() => {
-    console.log(`[OAuth] 실행 환경: ${Constants.executionEnvironment} (Expo Go: ${isExpoGo})`);
-    console.log(`[OAuth] iosClientId: ${iosClientId}`);
-    console.log('[OAuth] makeRedirectUri 결과:', redirectUri);
-    if (request?.redirectUri) {
-      console.log('[OAuth] 실제 request.redirectUri:', request.redirectUri);
-    }
-  }, [request?.redirectUri]);
 
   // 앱 시작 시 로그인 상태 감지
   useEffect(() => {
