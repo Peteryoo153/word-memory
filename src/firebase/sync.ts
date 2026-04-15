@@ -9,6 +9,8 @@ import {
 import { db } from './config';
 import { getAllProgress, saveWordProgress } from '../storage';
 import { AppSettings, WordProgress } from '../types';
+import { WordbookProgress } from '../types/wordbook';
+import { getProgress, saveProgress, getWordbookIds } from '../storage/wordbookStorage';
 
 // Firestore 경로 구조:
 // users/{userId}/progress/{wordId}  ← 단어별 학습 진도
@@ -61,4 +63,59 @@ export async function downloadSettings(userId: string): Promise<AppSettings | nu
 export async function syncAll(userId: string): Promise<void> {
   await uploadProgress(userId);
   await downloadProgress(userId);
+}
+
+// ── WordbookProgress Firestore 동기화 ───────────────────
+// 경로: users/{userId}/wordbook_progress/{wordbookId}
+
+export async function uploadWordbookProgress(
+  userId: string,
+  wordbookId: string,
+): Promise<void> {
+  const progress = await getProgress(wordbookId);
+  const ref = doc(db, 'users', userId, 'wordbook_progress', wordbookId);
+  await setDoc(ref, progress, { merge: true });
+}
+
+export async function downloadWordbookProgress(
+  userId: string,
+  wordbookId: string,
+): Promise<void> {
+  const ref = doc(db, 'users', userId, 'wordbook_progress', wordbookId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+
+  const remote = snap.data() as WordbookProgress;
+  const local = await getProgress(wordbookId);
+
+  // 더 최근 데이터 채택 (lastStudiedAt 비교)
+  if (!local.lastStudiedAt || remote.lastStudiedAt >= local.lastStudiedAt) {
+    await saveProgress(remote);
+  }
+}
+
+/** 보유한 모든 단어장 진도 업로드 */
+export async function uploadAllWordbookProgress(userId: string): Promise<void> {
+  const ids = await getWordbookIds();
+  await Promise.all(ids.map((id) => uploadWordbookProgress(userId, id)));
+}
+
+/** 보유한 모든 단어장 진도 다운로드 (다기기 동기화) */
+export async function downloadAllWordbookProgress(userId: string): Promise<void> {
+  const snap = await getDocs(collection(db, 'users', userId, 'wordbook_progress'));
+  await Promise.all(
+    snap.docs.map(async (d) => {
+      const remote = d.data() as WordbookProgress;
+      const local = await getProgress(remote.wordbookId);
+      if (!local.lastStudiedAt || remote.lastStudiedAt >= local.lastStudiedAt) {
+        await saveProgress(remote);
+      }
+    }),
+  );
+}
+
+/** 단어장 진도 전체 동기화 (업로드 + 다운로드) */
+export async function syncAllWordbookProgress(userId: string): Promise<void> {
+  await uploadAllWordbookProgress(userId);
+  await downloadAllWordbookProgress(userId);
 }

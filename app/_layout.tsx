@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
-import { seedBuiltinWordbook } from '../src/storage/wordbookStorage';
+import { migrateWordbooksIfNeeded } from '../src/storage/wordbookStorage';
 import { ALL_BUILTIN_WORDBOOKS } from '../src/data/builtinWordbooks';
 import { ThemeProvider, useColors } from '../src/theme';
 
@@ -40,11 +40,8 @@ function StackNav() {
 
 export default function RootLayout() {
   useEffect(() => {
-    (async () => {
-      for (const book of ALL_BUILTIN_WORDBOOKS) {
-        await seedBuiltinWordbook(book);
-      }
-    })();
+    // 스키마 버전이 다르면 기존 단어장 전부 초기화 후 새 내장 단어장으로 재시드
+    migrateWordbooksIfNeeded(ALL_BUILTIN_WORDBOOKS);
   }, []);
 
   return (

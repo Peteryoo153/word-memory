@@ -129,17 +129,21 @@ export default function WordCard({ word, index, total }: Props) {
 
             <View style={styles.divider} />
 
-            {/* 예문 */}
-            <View style={styles.sectionRow}>
-              <Text style={styles.sectionLabel}>예문</Text>
-              <TouchableOpacity
-                onPress={(e) => { e.stopPropagation(); speakSentence(word.example); }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="volume-medium-outline" size={14} color={colors.paper[400]} />
-              </TouchableOpacity>
-            </View>
-            <ExampleBox text={word.example} style={styles.exampleBox} />
+            {/* 예문 — 없으면 섹션 전체 숨김 */}
+            {word.example ? (
+              <>
+                <View style={styles.sectionRow}>
+                  <Text style={styles.sectionLabel}>예문</Text>
+                  <TouchableOpacity
+                    onPress={(e) => { e.stopPropagation(); speakSentence(word.example); }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons name="volume-medium-outline" size={14} color={colors.paper[400]} />
+                  </TouchableOpacity>
+                </View>
+                <ExampleBox text={word.example} style={styles.exampleBox} />
+              </>
+            ) : null}
 
             {/* 동의어 */}
             {word.synonyms.length > 0 && (

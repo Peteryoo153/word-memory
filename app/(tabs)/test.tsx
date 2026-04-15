@@ -234,9 +234,11 @@ export default function TestScreen() {
               <Text style={styles.feedbackDetail}>
                 {q.word.word} = {q.word.meaning}
               </Text>
-              <Text style={styles.feedbackExample} numberOfLines={2}>
-                {q.word.example}
-              </Text>
+              {q.word.example ? (
+                <Text style={styles.feedbackExample} numberOfLines={2}>
+                  {q.word.example}
+                </Text>
+              ) : null}
             </View>
           )}
         </ScrollView>

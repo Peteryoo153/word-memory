@@ -3,11 +3,16 @@ import { Wordbook, WordbookProgress, EbbinghausEntry } from '../types/wordbook';
 
 // ── AsyncStorage 키 규칙 ────────────────────────────
 const KEYS = {
-  LIST:        'wordbooks:list',                                    // 보유 단어장 ID 배열
-  BOOK:        (id: string) => `wordbook:${id}`,                   // 단어장 데이터
-  PROGRESS:    (wbId: string) => `progress:${wbId}:local`,         // 진행 데이터 (userId = 'local')
-  ACTIVE_ID:   'app:activeWordbookId',                             // 현재 활성 단어장 ID
+  LIST:           'wordbooks:list',
+  BOOK:           (id: string) => `wordbook:${id}`,
+  PROGRESS:       (wbId: string) => `progress:${wbId}:local`,
+  ACTIVE_ID:      'app:activeWordbookId',
+  SCHEMA_VERSION: 'app:wordbooksSchemaVersion',
 };
+
+// 새 단어장 세트로 교체할 때마다 이 값을 올림
+// → 앱 실행 시 버전이 다르면 기존 데이터 전부 초기화 후 재시드
+const CURRENT_SCHEMA_VERSION = 'v3-2026-04-15';
 
 // ── 단어장 목록 ─────────────────────────────────────
 
@@ -207,7 +212,7 @@ export async function resetAllProgress(): Promise<void> {
  */
 export async function seedBuiltinWordbook(wordbook: Wordbook): Promise<void> {
   const existing = await getWordbook(wordbook.id);
-  if (existing) return; // 이미 있으면 스킵
+  if (existing) return;
 
   await addWordbook(wordbook);
 
@@ -215,4 +220,62 @@ export async function seedBuiltinWordbook(wordbook: Wordbook): Promise<void> {
   if (!activeId) {
     await AsyncStorage.setItem(KEYS.ACTIVE_ID, wordbook.id);
   }
+}
+
+// ── 스키마 마이그레이션 ──────────────────────────────
+
+/**
+ * CURRENT_SCHEMA_VERSION과 저장된 버전이 다르면
+ * 모든 단어장 + 진도 데이터를 초기화하고 새 내장 단어장으로 재시드.
+ *
+ * 호출: app/_layout.tsx 앱 시작 시 1회
+ */
+export async function migrateWordbooksIfNeeded(builtinBooks: Wordbook[]): Promise<void> {
+  const stored = await AsyncStorage.getItem(KEYS.SCHEMA_VERSION);
+  if (stored === CURRENT_SCHEMA_VERSION) return;
+
+  // 기존 단어장 + 진도 전부 삭제
+  const ids = await getWordbookIds();
+  const keysToRemove = [
+    KEYS.LIST,
+    KEYS.ACTIVE_ID,
+    ...ids.map(KEYS.BOOK),
+    ...ids.map(KEYS.PROGRESS),
+  ];
+  await AsyncStorage.multiRemove(keysToRemove);
+
+  // 새 내장 단어장 시드
+  for (const book of builtinBooks) {
+    await addWordbook(book);
+  }
+  // 첫 번째 단어장을 활성으로 설정
+  if (builtinBooks.length > 0) {
+    await AsyncStorage.setItem(KEYS.ACTIVE_ID, builtinBooks[0].id);
+  }
+
+  await AsyncStorage.setItem(KEYS.SCHEMA_VERSION, CURRENT_SCHEMA_VERSION);
+}
+
+/**
+ * 설정 화면 "단어장 초기화" 버튼용.
+ * AsyncStorage의 모든 단어장 데이터를 지우고 내장 단어장으로 재시드.
+ */
+export async function hardResetWordbooks(builtinBooks: Wordbook[]): Promise<void> {
+  const ids = await getWordbookIds();
+  const keysToRemove = [
+    KEYS.LIST,
+    KEYS.ACTIVE_ID,
+    ...ids.map(KEYS.BOOK),
+    ...ids.map(KEYS.PROGRESS),
+  ];
+  await AsyncStorage.multiRemove(keysToRemove);
+
+  for (const book of builtinBooks) {
+    await addWordbook(book);
+  }
+  if (builtinBooks.length > 0) {
+    await AsyncStorage.setItem(KEYS.ACTIVE_ID, builtinBooks[0].id);
+  }
+
+  await AsyncStorage.setItem(KEYS.SCHEMA_VERSION, CURRENT_SCHEMA_VERSION);
 }

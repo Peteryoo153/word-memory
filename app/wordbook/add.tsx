@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   getAllWordbooks, addWordbook, getActiveWordbookId, switchActiveWordbook,
 } from '../../src/storage/wordbookStorage';
-import { ALL_BUILTIN_WORDBOOKS } from '../../src/data/builtinWordbooks';
+import { BUILTIN_CATEGORIES } from '../../src/data/builtinWordbooks';
 import { Wordbook } from '../../src/types/wordbook';
 import { fontSize, fontWeight, spacing, radius, lineHeight, useColors, ColorPalette } from '../../src/theme';
 
@@ -35,14 +35,13 @@ export default function AddWordbookScreen() {
     try {
       await addWordbook(book);
 
-      // 처음 추가하는 단어장이면 자동으로 활성화
       const activeId = await getActiveWordbookId();
       if (!activeId) {
         await switchActiveWordbook(book.id);
       }
 
       setOwnedIds((prev) => new Set([...prev, book.id]));
-      Alert.alert('추가 완료', `'${book.name}'이 내 단어장에 추가됐어요!`);
+      Alert.alert('추가 완료', `'${book.name}'을 내 단어장에 추가했어요!`);
     } finally {
       setAdding(null);
     }
@@ -66,49 +65,54 @@ export default function AddWordbookScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* 내장 단어장 섹션 */}
-        <Text style={styles.sectionTitle}>기본 제공 단어장</Text>
-        {ALL_BUILTIN_WORDBOOKS.map((book) => {
-          const owned = ownedIds.has(book.id);
-          const isAdding = adding === book.id;
+        {BUILTIN_CATEGORIES.map((category) => (
+          <View key={category.id}>
+            {/* 카테고리 헤더 */}
+            <Text style={styles.categoryTitle}>{category.label}</Text>
 
-          return (
-            <View key={book.id} style={styles.card}>
-              <View style={styles.cardLeft}>
-                <View style={styles.cardTitleRow}>
-                  <Text style={styles.cardName}>{book.name}</Text>
-                  {owned && (
-                    <View style={styles.ownedBadge}>
-                      <Ionicons name="checkmark" size={11} color={colors.sage[600]} />
-                      <Text style={styles.ownedBadgeText}>추가됨</Text>
+            {category.books.map((book) => {
+              const owned = ownedIds.has(book.id);
+              const isAdding = adding === book.id;
+
+              return (
+                <View key={book.id} style={styles.card}>
+                  <View style={styles.cardLeft}>
+                    <View style={styles.cardTitleRow}>
+                      <Text style={styles.cardName}>{book.name}</Text>
+                      {owned && (
+                        <View style={styles.ownedBadge}>
+                          <Ionicons name="checkmark" size={11} color={colors.sage[600]} />
+                          <Text style={styles.ownedBadgeText}>추가됨</Text>
+                        </View>
+                      )}
                     </View>
-                  )}
-                </View>
-                {book.description ? (
-                  <Text style={styles.cardDesc} numberOfLines={2}>{book.description}</Text>
-                ) : null}
-                <Text style={styles.cardWordCount}>{book.totalWords}개 단어</Text>
-              </View>
+                    {book.description ? (
+                      <Text style={styles.cardDesc} numberOfLines={2}>{book.description}</Text>
+                    ) : null}
+                    <Text style={styles.cardWordCount}>{book.totalWords}개 단어</Text>
+                  </View>
 
-              <TouchableOpacity
-                style={[styles.addBtn, owned && styles.addBtnOwned]}
-                onPress={() => !owned && handleAdd(book)}
-                disabled={owned || isAdding}
-              >
-                {isAdding ? (
-                  <Text style={styles.addBtnText}>추가 중...</Text>
-                ) : owned ? (
-                  <Ionicons name="checkmark-circle" size={20} color={colors.sage[400]} />
-                ) : (
-                  <Text style={styles.addBtnText}>추가</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          );
-        })}
+                  <TouchableOpacity
+                    style={[styles.addBtn, owned && styles.addBtnOwned]}
+                    onPress={() => !owned && handleAdd(book)}
+                    disabled={owned || isAdding}
+                  >
+                    {isAdding ? (
+                      <Text style={styles.addBtnText}>추가 중...</Text>
+                    ) : owned ? (
+                      <Ionicons name="checkmark-circle" size={20} color={colors.sage[400]} />
+                    ) : (
+                      <Text style={styles.addBtnText}>추가</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
+          </View>
+        ))}
 
         {/* 커스텀 단어장 안내 */}
-        <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>직접 만들기</Text>
+        <Text style={[styles.categoryTitle, { marginTop: spacing.xl }]}>직접 만들기</Text>
         <View style={[styles.card, styles.customCard]}>
           <Ionicons name="construct-outline" size={32} color={colors.paper[300]} />
           <Text style={styles.customTitle}>준비 중이에요</Text>
@@ -147,13 +151,14 @@ function makeStyles(colors: ColorPalette) {
   scroll: { flex: 1 },
   scrollContent: { padding: spacing.lg, paddingBottom: 40 },
 
-  sectionTitle: {
+  categoryTitle: {
     fontSize: fontSize.label,
     fontWeight: fontWeight.medium,
     color: colors.paper[400],
     letterSpacing: 1.2,
     textTransform: 'uppercase',
     marginBottom: spacing.sm,
+    marginTop: spacing.md,
     marginLeft: spacing.xs,
   },
 

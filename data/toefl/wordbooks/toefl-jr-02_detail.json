@@ -1,0 +1,1451 @@
+{
+  "id": "toefl-jr-02_detail",
+  "name": "Chapter 02 - DETAIL",
+  "description": "토플 주니어 듣기: 세부 정보 단어",
+  "source": "pdf",
+  "totalWords": 174,
+  "words": [
+    {
+      "id": "nowadays",
+      "word": "nowadays",
+      "partOfSpeech": "adverb",
+      "meanings": [
+        "요즘"
+      ]
+    },
+    {
+      "id": "include",
+      "word": "include",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "포함하다"
+      ]
+    },
+    {
+      "id": "nurse",
+      "word": "nurse",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "보건 교사"
+      ]
+    },
+    {
+      "id": "medicine",
+      "word": "medicine",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "약"
+      ]
+    },
+    {
+      "id": "lie_down",
+      "word": "lie down",
+      "partOfSpeech": "phrase",
+      "meanings": [
+        "눕다"
+      ]
+    },
+    {
+      "id": "pick_up",
+      "word": "pick up",
+      "partOfSpeech": "phrase",
+      "meanings": [
+        "~을 데리러 오다"
+      ]
+    },
+    {
+      "id": "schoolwork",
+      "word": "schoolwork",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "학업"
+      ]
+    },
+    {
+      "id": "attention",
+      "word": "attention",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "주의"
+      ]
+    },
+    {
+      "id": "undergo",
+      "word": "undergo",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "겪다"
+      ]
+    },
+    {
+      "id": "nutritious",
+      "word": "nutritious",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "영양가 있는"
+      ]
+    },
+    {
+      "id": "with_a_focus_on",
+      "word": "with a focus on",
+      "partOfSpeech": "",
+      "meanings": [
+        "~에 초점을 맞추어"
+      ]
+    },
+    {
+      "id": "price",
+      "word": "price",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "가격"
+      ]
+    },
+    {
+      "id": "meal",
+      "word": "meal",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "식사"
+      ]
+    },
+    {
+      "id": "increase",
+      "word": "increase",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "올라가다"
+      ]
+    },
+    {
+      "id": "cafeteria",
+      "word": "cafeteria",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "구내식당"
+      ]
+    },
+    {
+      "id": "inform_a_about_b",
+      "word": "inform A about B",
+      "partOfSpeech": "",
+      "meanings": [
+        "A에게 B에 대해 알리다"
+      ]
+    },
+    {
+      "id": "group_work",
+      "word": "group work",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "조별 활동"
+      ]
+    },
+    {
+      "id": "handout",
+      "word": "handout",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "유인물"
+      ]
+    },
+    {
+      "id": "bone",
+      "word": "bone",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "뼈"
+      ]
+    },
+    {
+      "id": "human",
+      "word": "human",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "인간의"
+      ]
+    },
+    {
+      "id": "partner",
+      "word": "partner",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "짝"
+      ]
+    },
+    {
+      "id": "label",
+      "word": "label",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "이름을 쓰다"
+      ]
+    },
+    {
+      "id": "blank",
+      "word": "blank",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "빈칸"
+      ]
+    },
+    {
+      "id": "commend",
+      "word": "commend",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "칭찬하다"
+      ]
+    },
+    {
+      "id": "performance",
+      "word": "performance",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "성과"
+      ]
+    },
+    {
+      "id": "track_meet",
+      "word": "track meet",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "육상 경기"
+      ]
+    },
+    {
+      "id": "past",
+      "word": "past",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "지난"
+      ]
+    },
+    {
+      "id": "dash",
+      "word": "dash",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "단거리 달리기"
+      ]
+    },
+    {
+      "id": "state",
+      "word": "state",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "(미국의) 주"
+      ]
+    },
+    {
+      "id": "place",
+      "word": "place",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "위치하다"
+      ]
+    },
+    {
+      "id": "long_jump",
+      "word": "long jump",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "멀리뛰기"
+      ]
+    },
+    {
+      "id": "congratulate",
+      "word": "congratulate",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "축하하다"
+      ]
+    },
+    {
+      "id": "beside",
+      "word": "beside",
+      "partOfSpeech": "preposition",
+      "meanings": [
+        "~ 옆에"
+      ]
+    },
+    {
+      "id": "go_over",
+      "word": "go over",
+      "partOfSpeech": "phrase",
+      "meanings": [
+        "~을 검토하다"
+      ]
+    },
+    {
+      "id": "mark",
+      "word": "mark",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "표시하다"
+      ]
+    },
+    {
+      "id": "both_a_and_b",
+      "word": "both A and B",
+      "partOfSpeech": "",
+      "meanings": [
+        "A와 B 둘 다"
+      ]
+    },
+    {
+      "id": "correct",
+      "word": "correct",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "맞는"
+      ]
+    },
+    {
+      "id": "incorrect",
+      "word": "incorrect",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "틀린"
+      ]
+    },
+    {
+      "id": "vocabulary",
+      "word": "vocabulary",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "어휘"
+      ]
+    },
+    {
+      "id": "spell",
+      "word": "spell",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "철자를 쓰다"
+      ]
+    },
+    {
+      "id": "part_of_speech",
+      "word": "part of speech",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "품사"
+      ]
+    },
+    {
+      "id": "definition",
+      "word": "definition",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "정의"
+      ]
+    },
+    {
+      "id": "worth",
+      "word": "worth",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "~의 가치가 있는"
+      ]
+    },
+    {
+      "id": "point",
+      "word": "point",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "점수"
+      ]
+    },
+    {
+      "id": "inform_a_of_b",
+      "word": "inform A of B",
+      "partOfSpeech": "",
+      "meanings": [
+        "A에게 B를 알리다"
+      ]
+    },
+    {
+      "id": "opportunity",
+      "word": "opportunity",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "기회"
+      ]
+    },
+    {
+      "id": "local",
+      "word": "local",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "지역의"
+      ]
+    },
+    {
+      "id": "host",
+      "word": "host",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "주최하다"
+      ]
+    },
+    {
+      "id": "dormitory",
+      "word": "dormitory",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "기숙사"
+      ]
+    },
+    {
+      "id": "campus",
+      "word": "campus",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "교정"
+      ]
+    },
+    {
+      "id": "interested",
+      "word": "interested",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "관심 있는"
+      ]
+    },
+    {
+      "id": "application_form",
+      "word": "application form",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "지원서"
+      ]
+    },
+    {
+      "id": "fundraiser",
+      "word": "fundraiser",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "모금 행사"
+      ]
+    },
+    {
+      "id": "auditorium",
+      "word": "auditorium",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "강당"
+      ]
+    },
+    {
+      "id": "silent_auction",
+      "word": "silent auction",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "입찰식 경매"
+      ]
+    },
+    {
+      "id": "tons_of",
+      "word": "tons of",
+      "partOfSpeech": "",
+      "meanings": [
+        "엄청나게 많은"
+      ]
+    },
+    {
+      "id": "item",
+      "word": "item",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "물품"
+      ]
+    },
+    {
+      "id": "available",
+      "word": "available",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "이용 가능한"
+      ]
+    },
+    {
+      "id": "bid_on",
+      "word": "bid on",
+      "partOfSpeech": "",
+      "meanings": [
+        "~에 입찰하다"
+      ]
+    },
+    {
+      "id": "event",
+      "word": "event",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "행사"
+      ]
+    },
+    {
+      "id": "improve",
+      "word": "improve",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "향상시키다"
+      ]
+    },
+    {
+      "id": "final_exam",
+      "word": "final exam",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "기말고사"
+      ]
+    },
+    {
+      "id": "look_forward_to",
+      "word": "look forward to",
+      "partOfSpeech": "phrase",
+      "meanings": [
+        "~을 기대하다"
+      ]
+    },
+    {
+      "id": "plan_to_v",
+      "word": "plan to V",
+      "partOfSpeech": "",
+      "meanings": [
+        "~할 계획이다"
+      ]
+    },
+    {
+      "id": "as_soon_as",
+      "word": "as soon as",
+      "partOfSpeech": "",
+      "meanings": [
+        "~하자마자"
+      ]
+    },
+    {
+      "id": "after_all",
+      "word": "after all",
+      "partOfSpeech": "",
+      "meanings": [
+        "어쨌든",
+        "결국"
+      ]
+    },
+    {
+      "id": "you_can_say_that_again",
+      "word": "You can say that again.",
+      "partOfSpeech": "",
+      "meanings": [
+        "네 말이 맞아."
+      ]
+    },
+    {
+      "id": "a_couple_of",
+      "word": "a couple of",
+      "partOfSpeech": "",
+      "meanings": [
+        "두어 개의"
+      ]
+    },
+    {
+      "id": "chapter",
+      "word": "chapter",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "(책의) 장",
+        "챕터"
+      ]
+    },
+    {
+      "id": "ahead_of",
+      "word": "ahead of",
+      "partOfSpeech": "",
+      "meanings": [
+        "~보다 앞선"
+      ]
+    },
+    {
+      "id": "review",
+      "word": "review",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "복습하다",
+        "검토하다"
+      ]
+    },
+    {
+      "id": "confident",
+      "word": "confident",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "자신 있는"
+      ]
+    },
+    {
+      "id": "for_sure",
+      "word": "for sure",
+      "partOfSpeech": "",
+      "meanings": [
+        "확실히",
+        "분명히"
+      ]
+    },
+    {
+      "id": "subject",
+      "word": "subject",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "과목"
+      ]
+    },
+    {
+      "id": "knack",
+      "word": "knack",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "요령",
+        "재능"
+      ]
+    },
+    {
+      "id": "date",
+      "word": "date",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "날짜"
+      ]
+    },
+    {
+      "id": "trouble",
+      "word": "trouble",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "문제",
+        "곤란"
+      ]
+    },
+    {
+      "id": "make_sure",
+      "word": "make sure",
+      "partOfSpeech": "",
+      "meanings": [
+        "반드시 ~하도록 하다"
+      ]
+    },
+    {
+      "id": "thanksgiving",
+      "word": "Thanksgiving",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "추수감사절"
+      ]
+    },
+    {
+      "id": "holiday",
+      "word": "holiday",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "휴일",
+        "방학"
+      ]
+    },
+    {
+      "id": "fly_out",
+      "word": "fly out",
+      "partOfSpeech": "phrase",
+      "meanings": [
+        "비행기로 떠나다"
+      ]
+    },
+    {
+      "id": "already",
+      "word": "already",
+      "partOfSpeech": "adverb",
+      "meanings": [
+        "이미",
+        "벌써"
+      ]
+    },
+    {
+      "id": "reunion",
+      "word": "reunion",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "모임"
+      ]
+    },
+    {
+      "id": "relatives",
+      "word": "relatives",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "친척들"
+      ]
+    },
+    {
+      "id": "several",
+      "word": "several",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "여러"
+      ]
+    },
+    {
+      "id": "loads_of",
+      "word": "loads of",
+      "partOfSpeech": "",
+      "meanings": [
+        "아주 많은"
+      ]
+    },
+    {
+      "id": "crowded",
+      "word": "crowded",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "붐비는",
+        "사람이 많은"
+      ]
+    },
+    {
+      "id": "pretty",
+      "word": "pretty",
+      "partOfSpeech": "adverb",
+      "meanings": [
+        "꽤",
+        "매우"
+      ]
+    },
+    {
+      "id": "feed",
+      "word": "feed",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "먹이다",
+        "식사를 제공하다"
+      ]
+    },
+    {
+      "id": "work_out",
+      "word": "work out",
+      "partOfSpeech": "phrase",
+      "meanings": [
+        "(일이) 풀리다"
+      ]
+    },
+    {
+      "id": "curious",
+      "word": "curious",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "궁금한"
+      ]
+    },
+    {
+      "id": "cumulus",
+      "word": "cumulus",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "적운"
+      ]
+    },
+    {
+      "id": "stratus",
+      "word": "stratus",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "층운"
+      ]
+    },
+    {
+      "id": "cirrus",
+      "word": "cirrus",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "권운"
+      ]
+    },
+    {
+      "id": "fluffy",
+      "word": "fluffy",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "솜털 같은",
+        "푹신한"
+      ]
+    },
+    {
+      "id": "resemble",
+      "word": "resemble",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "닮다"
+      ]
+    },
+    {
+      "id": "as_for",
+      "word": "as for",
+      "partOfSpeech": "",
+      "meanings": [
+        "~으로 말하자면",
+        "~에 대해서는"
+      ]
+    },
+    {
+      "id": "wispy",
+      "word": "wispy",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "가늘게 흩어진",
+        "성긴"
+      ]
+    },
+    {
+      "id": "aware",
+      "word": "aware",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "~을 알고 있는"
+      ]
+    },
+    {
+      "id": "altitude",
+      "word": "altitude",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "고도",
+        "높이"
+      ]
+    },
+    {
+      "id": "determine",
+      "word": "determine",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "결정하다",
+        "규정하다"
+      ]
+    },
+    {
+      "id": "level",
+      "word": "level",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "층",
+        "높이"
+      ]
+    },
+    {
+      "id": "form",
+      "word": "form",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "형성되다"
+      ]
+    },
+    {
+      "id": "typically",
+      "word": "typically",
+      "partOfSpeech": "adverb",
+      "meanings": [
+        "대체로"
+      ]
+    },
+    {
+      "id": "cover",
+      "word": "cover",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "덮다",
+        "뒤덮다"
+      ]
+    },
+    {
+      "id": "drop",
+      "word": "drop",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "떨어뜨리다",
+        "내리다"
+      ]
+    },
+    {
+      "id": "amount",
+      "word": "amount",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "양"
+      ]
+    },
+    {
+      "id": "stratocumulus",
+      "word": "stratocumulus",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "층적운"
+      ]
+    },
+    {
+      "id": "on_the_other_hand",
+      "word": "on the other hand",
+      "partOfSpeech": "",
+      "meanings": [
+        "한편"
+      ]
+    },
+    {
+      "id": "puffy",
+      "word": "puffy",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "뭉게뭉게 피어 오른"
+      ]
+    },
+    {
+      "id": "result_in",
+      "word": "result in",
+      "partOfSpeech": "phrase",
+      "meanings": [
+        "~을 가져오다"
+      ]
+    },
+    {
+      "id": "transform_into",
+      "word": "transform into",
+      "partOfSpeech": "",
+      "meanings": [
+        "~으로 변하다"
+      ]
+    },
+    {
+      "id": "produce",
+      "word": "produce",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "만들어 내다"
+      ]
+    },
+    {
+      "id": "thunderstorm",
+      "word": "thunderstorm",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "뇌우"
+      ]
+    },
+    {
+      "id": "purchase",
+      "word": "purchase",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "구입하다"
+      ]
+    },
+    {
+      "id": "territory",
+      "word": "territory",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "영토",
+        "지역"
+      ]
+    },
+    {
+      "id": "essentially",
+      "word": "essentially",
+      "partOfSpeech": "adverb",
+      "meanings": [
+        "본질적으로",
+        "사실상"
+      ]
+    },
+    {
+      "id": "section",
+      "word": "section",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "구획",
+        "부분"
+      ]
+    },
+    {
+      "id": "following",
+      "word": "following",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "그 다음의"
+      ]
+    },
+    {
+      "id": "expedition",
+      "word": "expedition",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "원정대",
+        "탐험대"
+      ]
+    },
+    {
+      "id": "of_importance",
+      "word": "of importance",
+      "partOfSpeech": "",
+      "meanings": [
+        "중요한"
+      ]
+    },
+    {
+      "id": "unexplored",
+      "word": "unexplored",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "탐험되지 않은",
+        "미지의"
+      ]
+    },
+    {
+      "id": "task",
+      "word": "task",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "일",
+        "과업",
+        "임무"
+      ]
+    },
+    {
+      "id": "map",
+      "word": "map",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "지도화하다",
+        "표시하다"
+      ]
+    },
+    {
+      "id": "settler",
+      "word": "settler",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "정착민"
+      ]
+    },
+    {
+      "id": "route",
+      "word": "route",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "길",
+        "경로"
+      ]
+    },
+    {
+      "id": "preferably",
+      "word": "preferably",
+      "partOfSpeech": "adverb",
+      "meanings": [
+        "되도록이면"
+      ]
+    },
+    {
+      "id": "pacific_ocean",
+      "word": "Pacific Ocean",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "태평양"
+      ]
+    },
+    {
+      "id": "native",
+      "word": "native",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "원주민의",
+        "토착의"
+      ]
+    },
+    {
+      "id": "tribe",
+      "word": "tribe",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "부족",
+        "집단"
+      ]
+    },
+    {
+      "id": "contact",
+      "word": "contact",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "접촉",
+        "연락"
+      ]
+    },
+    {
+      "id": "establish",
+      "word": "establish",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "확립하다"
+      ]
+    },
+    {
+      "id": "peaceful",
+      "word": "peaceful",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "평화로운"
+      ]
+    },
+    {
+      "id": "relation",
+      "word": "relation",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "관계"
+      ]
+    },
+    {
+      "id": "explorer",
+      "word": "explorer",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "탐험가"
+      ]
+    },
+    {
+      "id": "journey",
+      "word": "journey",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "여행",
+        "여정"
+      ]
+    },
+    {
+      "id": "assign",
+      "word": "assign",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "(숙제로) 내 주다"
+      ]
+    },
+    {
+      "id": "material",
+      "word": "material",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "자료",
+        "내용"
+      ]
+    },
+    {
+      "id": "discussion",
+      "word": "discussion",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "토론"
+      ]
+    },
+    {
+      "id": "obvious",
+      "word": "obvious",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "분명한",
+        "명백한"
+      ]
+    },
+    {
+      "id": "contribution",
+      "word": "contribution",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "기여",
+        "의견 제시"
+      ]
+    },
+    {
+      "id": "unless",
+      "word": "unless",
+      "partOfSpeech": "conjunction",
+      "meanings": [
+        "~하지 않는 한"
+      ]
+    },
+    {
+      "id": "gymnasium",
+      "word": "gymnasium",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "체육관"
+      ]
+    },
+    {
+      "id": "compete",
+      "word": "compete",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "경쟁하다",
+        "출전하다"
+      ]
+    },
+    {
+      "id": "state_championship",
+      "word": "state championship",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "주 챔피언 결정전",
+        "결승전"
+      ]
+    },
+    {
+      "id": "school_spirit",
+      "word": "school spirit",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "애교심"
+      ]
+    },
+    {
+      "id": "attend",
+      "word": "attend",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "~에 참석하다"
+      ]
+    },
+    {
+      "id": "cheer_for",
+      "word": "cheer for",
+      "partOfSpeech": "phrase",
+      "meanings": [
+        "~를 응원하다"
+      ]
+    },
+    {
+      "id": "midterm_exam",
+      "word": "midterm exam",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "중간고사"
+      ]
+    },
+    {
+      "id": "up_to_this_point",
+      "word": "up to this point",
+      "partOfSpeech": "",
+      "meanings": [
+        "지금까지",
+        "이 시점까지"
+      ]
+    },
+    {
+      "id": "include_2",
+      "word": "include",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "포함하다"
+      ]
+    },
+    {
+      "id": "chapter_2",
+      "word": "chapter",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "(책의) 장"
+      ]
+    },
+    {
+      "id": "handout_2",
+      "word": "handout",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "유인물",
+        "나눠준 자료"
+      ]
+    },
+    {
+      "id": "take_notes",
+      "word": "take notes",
+      "partOfSpeech": "",
+      "meanings": [
+        "필기하다",
+        "메모하다"
+      ]
+    },
+    {
+      "id": "rapidly",
+      "word": "rapidly",
+      "partOfSpeech": "adverb",
+      "meanings": [
+        "빠르게",
+        "급속히"
+      ]
+    },
+    {
+      "id": "approach",
+      "word": "approach",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "다가오다",
+        "접근하다"
+      ]
+    },
+    {
+      "id": "fluid",
+      "word": "fluid",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "액체",
+        "수분"
+      ]
+    },
+    {
+      "id": "hydrate",
+      "word": "hydrate",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "수분을 공급하다"
+      ]
+    },
+    {
+      "id": "feel_like_v_ing",
+      "word": "feel like V-ing",
+      "partOfSpeech": "",
+      "meanings": [
+        "~할 것 같다"
+      ]
+    },
+    {
+      "id": "faint",
+      "word": "faint",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "기절하다"
+      ]
+    },
+    {
+      "id": "shade",
+      "word": "shade",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "그늘"
+      ]
+    },
+    {
+      "id": "afterward",
+      "word": "afterward",
+      "partOfSpeech": "adverb",
+      "meanings": [
+        "나중에",
+        "그 뒤에"
+      ]
+    },
+    {
+      "id": "plan_to_v_2",
+      "word": "plan to V",
+      "partOfSpeech": "",
+      "meanings": [
+        "~할 계획이다"
+      ]
+    },
+    {
+      "id": "go_along_with",
+      "word": "go along with",
+      "partOfSpeech": "",
+      "meanings": [
+        "~와 함께 가다"
+      ]
+    },
+    {
+      "id": "exactly",
+      "word": "exactly",
+      "partOfSpeech": "adverb",
+      "meanings": [
+        "정확히"
+      ]
+    },
+    {
+      "id": "own",
+      "word": "own",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "가지고 있다",
+        "소유하다"
+      ]
+    },
+    {
+      "id": "speedboat",
+      "word": "speedboat",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "쾌속정",
+        "모터보트"
+      ]
+    },
+    {
+      "id": "go_waterskiing",
+      "word": "go waterskiing",
+      "partOfSpeech": "",
+      "meanings": [
+        "수상스키를 타다"
+      ]
+    },
+    {
+      "id": "present",
+      "word": "present",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "참석한",
+        "있는"
+      ]
+    },
+    {
+      "id": "adult_supervision",
+      "word": "adult supervision",
+      "partOfSpeech": "",
+      "meanings": [
+        "성인의 감독",
+        "보호자 동반"
+      ]
+    },
+    {
+      "id": "mention",
+      "word": "mention",
+      "partOfSpeech": "verb",
+      "meanings": [
+        "언급하다",
+        "말하다"
+      ]
+    },
+    {
+      "id": "acceptable",
+      "word": "acceptable",
+      "partOfSpeech": "adjective",
+      "meanings": [
+        "받아들일 수 있는",
+        "허용되는"
+      ]
+    },
+    {
+      "id": "might_have_p_p",
+      "word": "might have+p.p.",
+      "partOfSpeech": "",
+      "meanings": [
+        "~했을지도 모른다"
+      ]
+    },
+    {
+      "id": "volume",
+      "word": "volume",
+      "partOfSpeech": "noun",
+      "meanings": [
+        "음량"
+      ]
+    }
+  ]
+}
