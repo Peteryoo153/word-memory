@@ -12,6 +12,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.peteryoo153.wordmemo",
       "usesAppleSignIn": true,
+      "entitlements": {
+        "com.apple.developer.applesignin": ["Default"],
+        "aps-environment": "development"
+      },
       "infoPlist": {
         "CFBundleDisplayName": "단어암기장",
         "CFBundleURLTypes": [
