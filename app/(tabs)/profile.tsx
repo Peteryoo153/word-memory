@@ -1,12 +1,14 @@
 import { useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, ScrollView,
-  TouchableOpacity, ActivityIndicator, Alert, Image,
+  TouchableOpacity, ActivityIndicator, Alert, Image, Platform,
 } from 'react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useGoogleAuth } from '../../src/firebase/auth';
+import { useAuth } from '../../src/firebase/auth';
 import { syncAll } from '../../src/firebase/sync';
+import { deleteAccount } from '../../src/firebase/account';
 import { fontSize, fontWeight, spacing, radius, lineHeight, useColors, useTheme, ColorPalette, ThemePref } from '../../src/theme';
 
 const THEME_OPTIONS: { key: ThemePref; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -20,9 +22,13 @@ export default function SettingsScreen() {
   const { pref, setPref } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
-  const { user, loading, signingIn, error, signInWithGoogle, signOutUser } = useGoogleAuth();
+  const {
+    user, loading, signingIn, error, appleAvailable,
+    signInWithGoogle, signInWithApple, signOutUser,
+  } = useAuth();
   const [syncing, setSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function handleSync() {
     if (!user) return;
@@ -49,6 +55,50 @@ export default function SettingsScreen() {
         { text: '취소', style: 'cancel' },
         { text: '로그아웃', style: 'destructive', onPress: signOutUser },
       ]
+    );
+  }
+
+  async function performDelete() {
+    if (!user) return;
+    setDeleting(true);
+    try {
+      await deleteAccount(user);
+      Alert.alert('삭제 완료', '계정과 모든 데이터가 삭제됐어요.');
+    } catch (e: any) {
+      if (e?.code === 'auth/requires-recent-login') {
+        Alert.alert(
+          '재로그인 필요',
+          '보안을 위해 다시 로그인이 필요해요.\n로그아웃 후 다시 로그인한 뒤 삭제를 시도해주세요.',
+          [{ text: '확인', onPress: signOutUser }],
+        );
+      } else {
+        Alert.alert('오류', '계정 삭제 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.');
+      }
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  function handleDeleteAccount() {
+    Alert.alert(
+      '계정 삭제',
+      '계정과 클라우드에 저장된 모든 학습 데이터·그룹 정보가 영구 삭제돼요.\n이 작업은 되돌릴 수 없습니다.',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: () =>
+            Alert.alert(
+              '정말 삭제할까요?',
+              '마지막 확인이에요. 삭제하면 복구할 수 없어요.',
+              [
+                { text: '취소', style: 'cancel' },
+                { text: '영구 삭제', style: 'destructive', onPress: performDelete },
+              ],
+            ),
+        },
+      ],
     );
   }
 
@@ -115,6 +165,21 @@ export default function SettingsScreen() {
               </View>
               <Text style={[styles.rowTitle, { color: colors.semantic.error }]}>로그아웃</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.row, styles.rowDivider]}
+              onPress={handleDeleteAccount}
+              disabled={deleting}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.iconBox, styles.iconBoxDanger]}>
+                <Ionicons name="trash-outline" size={18} color={colors.semantic.error} />
+              </View>
+              <View style={styles.rowTextCol}>
+                <Text style={[styles.rowTitle, { color: colors.semantic.error }]}>계정 삭제</Text>
+                <Text style={styles.rowSub}>모든 클라우드 데이터가 영구 삭제돼요</Text>
+              </View>
+              {deleting && <ActivityIndicator size="small" color={colors.semantic.error} />}
+            </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.sectionGroup}>
@@ -144,6 +209,19 @@ export default function SettingsScreen() {
                   </>
                 )}
               </TouchableOpacity>
+              {Platform.OS === 'ios' && appleAvailable && (
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                  buttonStyle={
+                    colors.paper.bg === '#FDFBF0'
+                      ? AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                      : AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+                  }
+                  cornerRadius={radius.lg}
+                  style={styles.appleBtn}
+                  onPress={signInWithApple}
+                />
+              )}
               <Text style={styles.loginNote}>
                 로그인 없이도 모든 학습 기능을 사용할 수 있어요
               </Text>
@@ -400,6 +478,11 @@ function makeStyles(colors: ColorPalette) {
       color: colors.paper.white,
       fontSize: fontSize.body,
       fontWeight: fontWeight.medium,
+    },
+    appleBtn: {
+      width: '100%',
+      height: 48,
+      marginBottom: spacing.sm,
     },
     btnDisabled: { opacity: 0.55 },
     loginNote: {
