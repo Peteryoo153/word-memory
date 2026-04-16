@@ -11,21 +11,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.peteryoo153.wordmemo",
-      "usesAppleSignIn": true,
-      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "CFBundleDisplayName": "단어암기장",
         "CFBundleURLTypes": [
           {
             "CFBundleURLSchemes": [
-              "com.googleusercontent.apps.80364629052-foutf6riq3eo56qgm5f1bek34j9q2i4p",
-              "com.googleusercontent.apps.80364629052-n5g5hjt60nnptv6fskdks5oabpuub5sm"
-            ]
-          },
-          {
-            "CFBundleURLSchemes": [
-              "com.googleusercontent.apps.80364629052-foutf6riq3eo56qgm5f1bek34j9q2i4p",
-              "com.googleusercontent.apps.80364629052-n5g5hjt60nnptv6fskdks5oabpuub5sm"
+              "com.googleusercontent.apps.80364629052-foutf6riq3eo56qgm5f1bek34j9q2i4p"
             ]
           }
         ],
@@ -48,15 +39,6 @@
     "plugins": [
       "expo-router",
       "expo-apple-authentication",
-      "@react-native-firebase/app",
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "useFrameworks": "static"
-          }
-        }
-      ],
       [
         "expo-splash-screen",
         {

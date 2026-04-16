@@ -6,7 +6,7 @@ import {
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../src/firebase/auth';
+import { useGoogleAuth } from '../../src/firebase/auth';
 import { syncAll } from '../../src/firebase/sync';
 import { deleteAccount } from '../../src/firebase/account';
 import { fontSize, fontWeight, spacing, radius, lineHeight, useColors, useTheme, ColorPalette, ThemePref } from '../../src/theme';
@@ -23,9 +23,13 @@ export default function SettingsScreen() {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const {
-    user, loading, signingIn, error, appleAvailable,
-    signInWithGoogle, signInWithApple, signOutUser,
-  } = useAuth();
+    user, loading, signingIn, error,
+    signInWithGoogle, signOutUser,
+  } = useGoogleAuth();
+
+  function signInWithApple() {
+    Alert.alert('준비 중', 'Apple 로그인은 현재 준비 중이에요.\nGoogle 로그인을 이용해주세요.');
+  }
   const [syncing, setSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -209,7 +213,7 @@ export default function SettingsScreen() {
                   </>
                 )}
               </TouchableOpacity>
-              {Platform.OS === 'ios' && appleAvailable && (
+              {Platform.OS === 'ios' && (
                 <AppleAuthentication.AppleAuthenticationButton
                   buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
                   buttonStyle={

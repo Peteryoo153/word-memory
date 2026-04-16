@@ -1,7 +1,7 @@
 import {
   collection, getDocs, deleteDoc, doc, writeBatch,
 } from 'firebase/firestore';
-import type { FirebaseAuthTypes } from '@react-native-firebase/auth';
+import type { User } from 'firebase/auth';
 import { db } from './config';
 import { getUserGroupId, leaveGroup, getGroupData } from './groupStorage';
 
@@ -39,7 +39,7 @@ async function deleteFirestoreUserData(userId: string): Promise<void> {
  * 최근 로그인이 만료된 경우 'auth/requires-recent-login' 에러를 그대로 throw.
  * 호출부에서 catch 후 재로그인 안내 필요.
  */
-export async function deleteAccount(user: FirebaseAuthTypes.User): Promise<void> {
+export async function deleteAccount(user: User): Promise<void> {
   await deleteFirestoreUserData(user.uid);
   await user.delete();
 }
