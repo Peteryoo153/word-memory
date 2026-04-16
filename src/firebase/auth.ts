@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Crypto from 'expo-crypto';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import {
   GoogleAuthProvider,
+  OAuthProvider,
   signInWithCredential,
   signOut,
   onAuthStateChanged,
@@ -96,11 +99,50 @@ export function useGoogleAuth() {
     }
   }
 
+  async function signInWithApple() {
+    setError(null);
+    setSigningIn(true);
+    try {
+      const rawNonce = Crypto.randomUUID();
+      const hashedNonce = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        rawNonce,
+      );
+
+      const appleCredential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+        nonce: hashedNonce,
+      });
+
+      const { identityToken } = appleCredential;
+      if (!identityToken) throw new Error('Apple identityToken이 없습니다.');
+
+      const provider = new OAuthProvider('apple.com');
+      const firebaseCredential = provider.credential({
+        idToken: identityToken,
+        rawNonce,
+      });
+
+      await signInWithCredential(auth, firebaseCredential);
+      setError(null);
+    } catch (e: any) {
+      // 사용자가 직접 취소한 경우는 에러 표시 안 함
+      if (e?.code !== 'ERR_REQUEST_CANCELED') {
+        setError('Apple 로그인 중 오류가 발생했어요. 다시 시도해주세요.');
+      }
+    } finally {
+      setSigningIn(false);
+    }
+  }
+
   async function signOutUser() {
     await signOut(auth);
   }
 
-  return { user, loading, signingIn, error, signInWithGoogle, signOutUser, request };
+  return { user, loading, signingIn, error, signInWithGoogle, signInWithApple, signOutUser, request };
 }
 
 // useAuth 별칭 (profile.tsx 호환)

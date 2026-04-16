@@ -24,12 +24,8 @@ export default function SettingsScreen() {
   const router = useRouter();
   const {
     user, loading, signingIn, error,
-    signInWithGoogle, signOutUser,
+    signInWithGoogle, signInWithApple, signOutUser,
   } = useGoogleAuth();
-
-  function signInWithApple() {
-    Alert.alert('준비 중', 'Apple 로그인은 현재 준비 중이에요.\nGoogle 로그인을 이용해주세요.');
-  }
   const [syncing, setSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);

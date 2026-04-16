@@ -1,8 +1,9 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  TextInput, Alert, Share, ActivityIndicator,
+  TextInput, Alert, Share, ActivityIndicator, Platform,
 } from 'react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
@@ -23,7 +24,7 @@ const CARD_R = radius.xl;
 export default function GroupScreen() {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { user, signInWithGoogle, signingIn } = useGoogleAuth();
+  const { user, signInWithGoogle, signInWithApple, signingIn } = useGoogleAuth();
 
   const [loading, setLoading]           = useState(true);
   const [flowView, setFlowView]         = useState<FlowView>('home');
@@ -179,6 +180,19 @@ export default function GroupScreen() {
               {signingIn ? '로그인 중...' : 'Google로 로그인'}
             </Text>
           </TouchableOpacity>
+          {Platform.OS === 'ios' && (
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+              buttonStyle={
+                colors.paper.bg === '#FDFBF0'
+                  ? AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                  : AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+              }
+              cornerRadius={radius.lg}
+              style={styles.appleBtn}
+              onPress={signInWithApple}
+            />
+          )}
         </View>
       </SafeAreaView>
     );
@@ -531,6 +545,11 @@ function makeStyles(colors: ColorPalette) {
     color: colors.paper.white,
     fontSize: fontSize.body,
     fontWeight: fontWeight.semibold,
+  },
+  appleBtn: {
+    width: '100%',
+    height: 48,
+    marginTop: spacing.sm,
   },
 
   // ── 뒤로 / 페이지 헤더
