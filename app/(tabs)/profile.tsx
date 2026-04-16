@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, ScrollView,
-  TouchableOpacity, ActivityIndicator, Alert, Image, Platform,
+  TouchableOpacity, ActivityIndicator, Alert, Image, Platform, TextInput,
 } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useRouter } from 'expo-router';
@@ -24,9 +24,11 @@ export default function SettingsScreen() {
   const router = useRouter();
   const {
     user, loading, signingIn, error,
-    signInWithGoogle, signInWithApple, signOutUser,
+    signInWithGoogle, signInWithApple, signInWithEmail, signOutUser,
   } = useGoogleAuth();
   const [syncing, setSyncing] = useState(false);
+  const [emailInput, setEmailInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
   const [lastSynced, setLastSynced] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -222,6 +224,48 @@ export default function SettingsScreen() {
                   onPress={signInWithApple}
                 />
               )}
+              {/* 이메일 로그인 구분선 */}
+              <View style={styles.dividerRow}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>또는</Text>
+                <View style={styles.dividerLine} />
+              </View>
+              {/* 이메일 입력 */}
+              <TextInput
+                style={styles.emailInput}
+                value={emailInput}
+                onChangeText={setEmailInput}
+                placeholder="이메일"
+                placeholderTextColor={colors.paper[400]}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="next"
+              />
+              {/* 비밀번호 입력 */}
+              <TextInput
+                style={styles.emailInput}
+                value={passwordInput}
+                onChangeText={setPasswordInput}
+                placeholder="비밀번호"
+                placeholderTextColor={colors.paper[400]}
+                secureTextEntry
+                returnKeyType="done"
+                onSubmitEditing={() => {
+                  if (emailInput && passwordInput) signInWithEmail(emailInput, passwordInput);
+                }}
+              />
+              <TouchableOpacity
+                style={[styles.emailBtn, (signingIn || !emailInput || !passwordInput) && styles.btnDisabled]}
+                onPress={() => signInWithEmail(emailInput, passwordInput)}
+                disabled={signingIn || !emailInput || !passwordInput}
+              >
+                {signingIn ? (
+                  <ActivityIndicator color={colors.paper.white} />
+                ) : (
+                  <Text style={styles.emailBtnText}>이메일로 로그인</Text>
+                )}
+              </TouchableOpacity>
               <Text style={styles.loginNote}>
                 로그인 없이도 모든 학습 기능을 사용할 수 있어요
               </Text>
@@ -490,7 +534,50 @@ function makeStyles(colors: ColorPalette) {
       color: colors.paper[400],
       textAlign: 'center',
     },
-
+    dividerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      width: '100%',
+      marginVertical: spacing.md,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 0.5,
+      backgroundColor: colors.paper[200],
+    },
+    dividerText: {
+      fontSize: fontSize.caption,
+      color: colors.paper[400],
+      marginHorizontal: spacing.sm,
+    },
+    emailInput: {
+      width: '100%',
+      backgroundColor: colors.paper.bg,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.paper[200],
+      paddingVertical: 13,
+      paddingHorizontal: spacing.lg,
+      fontSize: fontSize.body,
+      color: colors.paper[900],
+      marginBottom: spacing.sm,
+    },
+    emailBtn: {
+      backgroundColor: colors.paper[700],
+      borderRadius: radius.lg,
+      paddingVertical: 14,
+      paddingHorizontal: spacing.xl,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: '100%',
+      marginBottom: spacing.sm,
+    },
+    emailBtnText: {
+      color: colors.paper.white,
+      fontSize: fontSize.body,
+      fontWeight: fontWeight.medium,
+    },
     // 테마
     themePadding: {
       padding: spacing.lg,

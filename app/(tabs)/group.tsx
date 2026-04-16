@@ -24,7 +24,9 @@ const CARD_R = radius.xl;
 export default function GroupScreen() {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { user, signInWithGoogle, signInWithApple, signingIn } = useGoogleAuth();
+  const { user, signInWithGoogle, signInWithApple, signInWithEmail, signingIn, error } = useGoogleAuth();
+  const [emailInput, setEmailInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
 
   const [loading, setLoading]           = useState(true);
   const [flowView, setFlowView]         = useState<FlowView>('home');
@@ -161,7 +163,7 @@ export default function GroupScreen() {
   if (!user) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.centerWrap}>
+        <ScrollView contentContainerStyle={styles.loginWrap} keyboardShouldPersistTaps="handled">
           <View style={styles.emptyIconBox}>
             <Ionicons name="people" size={40} color={colors.sage[400]} />
           </View>
@@ -169,8 +171,13 @@ export default function GroupScreen() {
           <Text style={styles.emptySub}>
             친구들과 함께 학습하고{'\n'}서로의 진도를 확인해봐요
           </Text>
+          {error && (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
           <TouchableOpacity
-            style={styles.loginBtn}
+            style={[styles.loginBtn, signingIn && styles.loginBtnDisabled]}
             onPress={signInWithGoogle}
             disabled={signingIn}
             activeOpacity={0.85}
@@ -193,7 +200,48 @@ export default function GroupScreen() {
               onPress={signInWithApple}
             />
           )}
-        </View>
+          {/* 이메일 로그인 구분선 */}
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>또는</Text>
+            <View style={styles.dividerLine} />
+          </View>
+          <TextInput
+            style={styles.emailInput}
+            value={emailInput}
+            onChangeText={setEmailInput}
+            placeholder="이메일"
+            placeholderTextColor={colors.paper[400]}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="next"
+          />
+          <TextInput
+            style={styles.emailInput}
+            value={passwordInput}
+            onChangeText={setPasswordInput}
+            placeholder="비밀번호"
+            placeholderTextColor={colors.paper[400]}
+            secureTextEntry
+            returnKeyType="done"
+            onSubmitEditing={() => {
+              if (emailInput && passwordInput) signInWithEmail(emailInput, passwordInput);
+            }}
+          />
+          <TouchableOpacity
+            style={[styles.emailBtn, (signingIn || !emailInput || !passwordInput) && styles.loginBtnDisabled]}
+            onPress={() => signInWithEmail(emailInput, passwordInput)}
+            disabled={signingIn || !emailInput || !passwordInput}
+            activeOpacity={0.85}
+          >
+            {signingIn ? (
+              <ActivityIndicator color={colors.paper.white} />
+            ) : (
+              <Text style={styles.loginBtnText}>이메일로 로그인</Text>
+            )}
+          </TouchableOpacity>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -504,6 +552,12 @@ function makeStyles(colors: ColorPalette) {
   },
 
   // ── 빈 상태 / 로딩
+  loginWrap: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
   centerWrap: {
     flex: 1,
     justifyContent: 'center',
@@ -535,12 +589,14 @@ function makeStyles(colors: ColorPalette) {
   loginBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.sm,
     backgroundColor: colors.sage[600],
     borderRadius: CARD_R,
     paddingVertical: 14,
-    paddingHorizontal: 28,
+    width: '100%',
   },
+  loginBtnDisabled: { opacity: 0.55 },
   loginBtnText: {
     color: colors.paper.white,
     fontSize: fontSize.body,
@@ -550,6 +606,56 @@ function makeStyles(colors: ColorPalette) {
     width: '100%',
     height: 48,
     marginTop: spacing.sm,
+  },
+  errorBox: {
+    backgroundColor: colors.terra[100],
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    width: '100%',
+  },
+  errorText: {
+    color: colors.semantic.error,
+    fontSize: fontSize.caption,
+    textAlign: 'center',
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginVertical: spacing.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 0.5,
+    backgroundColor: colors.paper[200],
+  },
+  dividerText: {
+    fontSize: fontSize.caption,
+    color: colors.paper[400],
+    marginHorizontal: spacing.sm,
+  },
+  emailInput: {
+    width: '100%',
+    backgroundColor: colors.paper.white,
+    borderRadius: CARD_R,
+    borderWidth: 1,
+    borderColor: colors.paper[200],
+    paddingVertical: 13,
+    paddingHorizontal: spacing.lg,
+    fontSize: fontSize.body,
+    color: colors.paper[900],
+    marginBottom: spacing.sm,
+  },
+  emailBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.paper[700],
+    borderRadius: CARD_R,
+    paddingVertical: 14,
+    width: '100%',
+    marginTop: spacing.xs,
   },
 
   // ── 뒤로 / 페이지 헤더

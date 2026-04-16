@@ -8,6 +8,7 @@ import {
   GoogleAuthProvider,
   OAuthProvider,
   signInWithCredential,
+  signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
   User,
@@ -138,12 +139,46 @@ export function useGoogleAuth() {
     }
   }
 
+  async function signInWithEmail(email: string, password: string) {
+    setError(null);
+    setSigningIn(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      setError(null);
+    } catch (e: any) {
+      setError(getEmailAuthError(e?.code ?? ''));
+    } finally {
+      setSigningIn(false);
+    }
+  }
+
   async function signOutUser() {
     await signOut(auth);
   }
 
-  return { user, loading, signingIn, error, signInWithGoogle, signInWithApple, signOutUser, request };
+  return { user, loading, signingIn, error, signInWithGoogle, signInWithApple, signInWithEmail, signOutUser, request };
 }
 
 // useAuth 별칭 (profile.tsx 호환)
 export const useAuth = useGoogleAuth;
+
+function getEmailAuthError(code: string): string {
+  switch (code) {
+    case 'auth/invalid-email':
+      return '올바른 이메일 형식이 아니에요.';
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+      return '이메일 또는 비밀번호가 올바르지 않아요.';
+    case 'auth/too-many-requests':
+      return '시도 횟수를 초과했어요. 잠시 후 다시 시도해주세요.';
+    case 'auth/network-request-failed':
+      return '네트워크 오류가 발생했어요. 인터넷 연결을 확인해주세요.';
+    case 'auth/email-already-in-use':
+      return '이미 사용 중인 이메일이에요.';
+    case 'auth/weak-password':
+      return '비밀번호는 6자 이상이어야 해요.';
+    default:
+      return '로그인 중 오류가 발생했어요. 다시 시도해주세요.';
+  }
+}
