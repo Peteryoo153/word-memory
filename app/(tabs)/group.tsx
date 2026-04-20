@@ -191,9 +191,9 @@ export default function GroupScreen() {
             <AppleAuthentication.AppleAuthenticationButton
               buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
               buttonStyle={
-                colors.paper.bg === '#FDFBF0'
+                colors.statusBarStyle === 'dark-content'
                   ? AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
-                  : AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+                  : AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE
               }
               cornerRadius={radius.lg}
               style={styles.appleBtn}
